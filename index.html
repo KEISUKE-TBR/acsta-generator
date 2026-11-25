@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>アクスタジェネレーター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 印刷所の作業台。静かで正確、主役は3Dのアクスタ
+   IDEA: 入稿前の校正台 — 透明な板、白版、カットライン
+   PICTURE: 画面の大半を占める3Dビュー。回して質感を確かめる
+   COLOUR and TYPE: 白い台＋墨＋プロセスマゼンタ（カットラインの色）。Zen Kaku Gothic New
+   LAYOUT: 左に大きなステージ、右に工程順の設定パネル。狭い画面では縦積み */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#141416);--ink:light-dark(#151517,#f2f2f4);--sub:light-dark(#5d5d64,#a5a5ad);--line:light-dark(#e7e5e1,#2b2b30);--field:light-dark(#f4f3f0,#1d1d21);--acc:#e6007e;--st1:light-dark(#f6f4f0,#2b2a31);--st2:light-dark(#d6d2ca,#0e0e11)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Zen Kaku Gothic New",system-ui,sans-serif;overflow-x:clip}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 380px;height:100vh}
+.stage{position:relative;overflow:hidden;background:linear-gradient(var(--st1),var(--st2))}
+#view{position:absolute;inset:0}#view canvas{display:block;width:100%;height:100%;touch-action:none}
+.chip{position:absolute;top:16px;left:16px;display:flex;flex-wrap:wrap;gap:8px;pointer-events:none}
+.chip span{background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(8px);padding:6px 12px;border-radius:99px;font-size:14px;font-weight:500;white-space:nowrap}
+.viewbar{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:6px;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(8px);padding:6px;border-radius:14px}
+.viewbar button{min-height:40px;padding:0 14px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}
+.viewbar button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.drop{position:absolute;inset:12px;border:3px dashed var(--acc);border-radius:18px;display:none;place-items:center;font-size:22px;font-weight:700;color:var(--acc);background:color-mix(in srgb,var(--bg) 70%,transparent)}
+.stage.over .drop{display:grid}
+.panel{overflow-y:auto;border-left:1px solid var(--line);padding:24px 22px 40px}
+h1{font-size:30px;line-height:1.1;font-weight:900;margin:0 0 6px;letter-spacing:.01em}
+.lead{color:var(--sub);font-size:14px;margin:0 0 18px}
+.up{display:flex;gap:10px;align-items:center;padding:14px;border-radius:14px;background:var(--field);margin-bottom:6px}
+.up label.btn{flex:none}
+.btn{display:inline-grid;place-items:center;min-height:44px;padding:0 18px;border-radius:12px;border:0;background:var(--ink);color:var(--bg);font:inherit;font-weight:700;font-size:15px;cursor:pointer}
+.btn.acc{background:var(--acc);color:#fff}.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.up small{font-size:13px;color:var(--sub)}
+.sample{font-size:13px;color:var(--sub);margin:0 0 8px}
+section{border-top:1px solid var(--line);padding:16px 0 6px}
+h2{font-size:17px;margin:0 0 8px;font-weight:700;display:flex;gap:8px;align-items:baseline}
+h2 i{font-style:normal;color:var(--acc);font-size:14px}
+.row{display:grid;grid-template-columns:7.2em minmax(0,1fr) 4.6em;align-items:center;gap:10px;min-height:44px}
+.row label{font-size:14px}.row output{font-size:14px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.row.sel{grid-template-columns:7.2em minmax(0,1fr)}
+input[type=range]{width:100%;accent-color:var(--acc);height:28px}
+select{width:100%;min-height:40px;font:inherit;font-size:16px;border-radius:10px;border:1.5px solid var(--line);background:var(--field);color:var(--ink);padding:0 10px}
+.check{display:flex;gap:10px;align-items:center;min-height:44px;font-size:14px}.check input{width:20px;height:20px;accent-color:var(--acc)}
+.hint{font-size:13px;color:var(--sub);margin:2px 0 8px}
+.exp{display:grid;gap:8px}
+#msg{min-height:1.5em;font-size:14px;margin:10px 0 0;color:var(--sub)}#msg.warn{color:var(--acc);font-weight:700}
+.probe1{background:var(--st1)}.probe2{background:var(--st2)}.probe1,.probe2{position:absolute;width:0;height:0}
+@media(max-width:900px){.app{grid-template-columns:1fr;height:auto}.stage{height:64vh;min-height:380px}.panel{border-left:0;overflow:visible}}
+@media(max-width:600px){.viewbar button{padding:0 10px}h1{font-size:26px}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div class="app">
+  <main class="stage" id="stage">
+    <div id="view"></div>
+    <div class="chip"><span id="sizeInfo">準備中…</span><span id="thickInfo"></span></div>
+    <div class="viewbar">
+      <button id="vFront" aria-pressed="false">正面</button>
+      <button id="vSide" aria-pressed="false">ななめ</button>
+      <button id="vBack" aria-pressed="false">裏面</button>
+      <button id="vSpin" aria-pressed="true">自動回転</button>
+    </div>
+    <div class="drop">ここに画像をドロップ</div>
+    <div class="probe1" id="p1"></div><div class="probe2" id="p2"></div>
+  </main>
+
+  <aside class="panel">
+    <h1>アクスタ<br>ジェネレーター</h1>
+    <p class="lead">画像を入れると、絵の形に沿ってカットしたアクリルスタンドを3Dで作ります。ドラッグで回転、ホイールで拡大。</p>
+    <div class="up">
+      <label class="btn acc" for="file">画像を選ぶ</label>
+      <input type="file" id="file" accept="image/*" hidden>
+      <small>背景が透明なPNGがいちばんきれい。画面にドロップもOK</small>
+    </div>
+    <p class="sample" id="sampleNote">いま表示しているのはサンプルのキャラクターです。</p>
+
+    <section>
+      <h2><i>1</i>切り抜き</h2>
+      <label class="check"><input type="checkbox" id="bg" checked>背景を自動で消す（JPGなど透明がない画像用）</label>
+      <div class="row"><label for="tol">消す強さ</label><input type="range" id="tol" min="5" max="120" value="40"><output data-for="tol"></output></div>
+      <div class="row"><label for="margin">カット余白</label><input type="range" id="margin" min="0.5" max="8" step="0.5" value="2.5" data-unit="mm"><output data-for="margin"></output></div>
+      <div class="row"><label for="smooth">輪郭のなめらかさ</label><input type="range" id="smooth" min="0" max="8" value="4"><output data-for="smooth"></output></div>
+      <p class="hint">余白は絵のふちからカットラインまでの距離。印刷会社はだいたい2〜3mmを推奨しています。</p>
+    </section>
+
+    <section>
+      <h2><i>2</i>サイズと板</h2>
+      <div class="row"><label for="h">絵の高さ</label><input type="range" id="h" min="30" max="200" step="1" value="100" data-unit="mm"><output data-for="h"></output></div>
+      <div class="row sel"><label for="t">板の厚み</label><select id="t"><option value="2">2mm（薄め・軽い）</option><option value="3" selected>3mm（標準）</option><option value="5">5mm（厚手・高級感）</option><option value="8">8mm（ブロック風）</option></select></div>
+    </section>
+
+    <section>
+      <h2><i>3</i>印刷と白版</h2>
+      <div class="row sel"><label for="white">白版</label><select id="white">
+        <option value="match">絵柄どおり（標準）</option>
+        <option value="choke">少し内側（ふちのはみ出し防止）</option>
+        <option value="full">板全体（ベタ白）</option>
+        <option value="none">なし（裏から透ける）</option>
+      </select></div>
+      <p class="hint">絵は板の裏側に印刷し、その後ろに白インクを重ねる構造です。白版がないと色が透けて薄く見えます。</p>
+    </section>
+
+    <section>
+      <h2><i>4</i>アクリルの質感</h2>
+      <div class="row"><label for="gloss">表面</label><input type="range" id="gloss" min="0" max="100" value="4"><output data-for="gloss"></output></div>
+      <div class="row"><label for="tint">ふちの色味</label><input type="range" id="tint" min="0" max="100" value="45"><output data-for="tint"></output></div>
+      <div class="row"><label for="rainbow">光の虹色</label><input type="range" id="rainbow" min="0" max="100" value="30"><output data-for="rainbow"></output></div>
+      <p class="hint">表面は0でピカピカ、上げるとすりガラス風。ふちの色味は、本物のアクリルの断面がうっすら緑がかって見える感じです。</p>
+    </section>
+
+    <section>
+      <h2><i>5</i>台座</h2>
+      <div class="row sel"><label for="base">形</label><select id="base"><option value="ellipse">だ円</option><option value="round">角丸の四角</option><option value="circle">まる</option><option value="none">台座なし</option></select></div>
+      <div class="row sel"><label for="baseMat">台座の色</label><select id="baseMat"><option value="clear">クリア</option><option value="white">ホワイト</option><option value="black">ブラック</option></select></div>
+      <div class="row"><label for="baseSize">台座の大きさ</label><input type="range" id="baseSize" min="50" max="150" value="85" data-unit="%"><output data-for="baseSize"></output></div>
+      <div class="row"><label for="baseT">台座の厚み</label><input type="range" id="baseT" min="2" max="10" step="1" value="5" data-unit="mm"><output data-for="baseT"></output></div>
+      <div class="row"><label for="tabW">差し込み幅</label><input type="range" id="tabW" min="8" max="60" step="1" value="20" data-unit="mm"><output data-for="tabW"></output></div>
+      <div class="row"><label for="tabX">差し込み位置</label><input type="range" id="tabX" min="-40" max="40" step="1" value="0" data-unit="mm"><output data-for="tabX"></output></div>
+    </section>
+
+    <section>
+      <h2><i>6</i>書き出し</h2>
+      <div class="exp">
+        <button class="btn acc" id="expGlb">3Dデータを保存（GLB・zip入り）</button>
+        <button class="btn ghost" id="expKit">入稿用データ一式（zip）</button>
+        <button class="btn ghost" id="expPng">いまの見た目を画像で保存（PNG）</button>
+      </div>
+      <p class="hint">保存形式の制限でGLBはzipに入れて渡します。解凍すると acrylic_stand.glb が出てきます。入稿用一式には 印刷画像・白版（K100）・カットパスSVG が入ります。</p>
+      <p id="msg" role="status"></p>
+    </section>
+  </aside>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
+
+const $=id=>document.getElementById(id);
+const msg=(t,warn)=>{$('msg').textContent=t;$('msg').className=warn?'warn':''};
+const fmt={tol:v=>v,smooth:v=>v,gloss:v=>v==0?'ツヤ':v+'%',tint:v=>v+'%',rainbow:v=>v+'%'};
+for(const o of document.querySelectorAll('output[data-for]')){const i=$(o.dataset.for);const f=()=>{o.textContent=fmt[i.id]?fmt[i.id](i.value):i.value+(i.dataset.unit||'')};i.addEventListener('input',f);f()}
+const P=()=>({h:+$('h').value,t:+$('t').value,margin:+$('margin').value,smooth:+$('smooth').value,white:$('white').value,gloss:+$('gloss').value/100,tint:+$('tint').value/100,rainbow:+$('rainbow').value/100,base:$('base').value,baseMat:$('baseMat').value,baseSize:+$('baseSize').value/100,baseT:+$('baseT').value,tabW:+$('tabW').value,tabX:+$('tabX').value,bg:$('bg').checked,tol:+$('tol').value});
+const mk=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.round(w));c.height=Math.max(1,Math.round(h));return c};
+
+/* ---------- three.js scene ---------- */
+const view=$('view');
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.toneMapping=THREE.NeutralToneMapping;renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+view.appendChild(renderer.domElement);
+const scene=new THREE.Scene();
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+const camera=new THREE.PerspectiveCamera(32,1,1,6000);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;controls.autoRotate=true;controls.autoRotateSpeed=1.4;
+const key=new THREE.DirectionalLight(0xffffff,1.6);key.position.set(80,160,140);key.castShadow=true;
+key.shadow.mapSize.set(2048,2048);Object.assign(key.shadow.camera,{left:-160,right:160,top:160,bottom:-160,near:10,far:600});key.shadow.radius=6;key.shadow.bias=-0.0005;
+scene.add(key);const rim=new THREE.DirectionalLight(0xffffff,0.8);rim.position.set(-120,90,-140);scene.add(rim);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(2000,2000),new THREE.ShadowMaterial({opacity:0.16}));
+ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+const stand=new THREE.Group();stand.name='acrylic_stand';scene.add(stand);
+
+function setBackground(){const a=getComputedStyle($('p1')).backgroundColor,b=getComputedStyle($('p2')).backgroundColor;
+  const c=mk(2,256),x=c.getContext('2d'),g=x.createLinearGradient(0,0,0,256);g.addColorStop(0,a);g.addColorStop(1,b);x.fillStyle=g;x.fillRect(0,0,2,256);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;if(scene.background)scene.background.dispose();scene.background=t}
+setBackground();
+const themeObs=new MutationObserver(setBackground);themeObs.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',setBackground);
+
+const resize=()=>{const w=view.clientWidth,h=view.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()};
+const ro=new ResizeObserver(resize);ro.observe(view);resize();
+renderer.setAnimationLoop(()=>{controls.update();renderer.render(scene,camera)});
+
+/* materials */
+const acrylic=new THREE.MeshPhysicalMaterial({color:0xffffff,metalness:0,roughness:0.04,transmission:1,ior:1.49,thickness:3,specularIntensity:1,clearcoat:0.4,clearcoatRoughness:0.03,attenuationDistance:45});
+acrylic.name='acrylic';
+const baseClear=acrylic.clone();baseClear.name='acrylic_base';
+const baseWhite=new THREE.MeshPhysicalMaterial({color:0xf4f4f2,roughness:0.25,clearcoat:0.8,clearcoatRoughness:0.05,name:'base_white'});
+const baseBlack=new THREE.MeshPhysicalMaterial({color:0x0c0c0e,roughness:0.2,clearcoat:1,clearcoatRoughness:0.03,name:'base_black'});
+function applyLook(){const p=P();
+  for(const m of [acrylic,baseClear]){m.roughness=0.02+p.gloss*0.5;m.clearcoatRoughness=0.02+p.gloss*0.4;
+    m.attenuationColor.set(0xffffff).lerp(new THREE.Color(0x9fe0c8),p.tint);m.dispersion=p.rainbow*6;m.needsUpdate=true}
+  acrylic.thickness=p.t;baseClear.thickness=p.baseT}
+
+/* ---------- image processing ---------- */
+const st={art:null,artIsSample:true,model:null,src:null};
+function prepareArt(img,p){
+  let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;const s=Math.min(1,2048/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);
+  const c=mk(w,h),x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,w,h);
+  const id=x.getImageData(0,0,w,h),d=id.data;let tr=0;for(let i=3;i<d.length;i+=4)if(d[i]<250)tr++;
+  const hasAlpha=tr>w*h*0.01;
+  if(!hasAlpha&&p.bg){const cs=[0,w-1,(h-1)*w,h*w-1];let r=0,g=0,b=0;for(const i of cs){r+=d[i*4];g+=d[i*4+1];b+=d[i*4+2]}r/=4;g/=4;b/=4;
+    const T=p.tol*p.tol*3,close=i=>{const dr=d[i*4]-r,dg=d[i*4+1]-g,db=d[i*4+2]-b;return dr*dr+dg*dg+db*db<=T};
+    const vis=new Uint8Array(w*h),q=new Int32Array(w*h);let qh=0,qt=0;const push=i=>{if(!vis[i]&&close(i)){vis[i]=1;q[qt++]=i}};
+    for(let X=0;X<w;X++){push(X);push((h-1)*w+X)}for(let Y=0;Y<h;Y++){push(Y*w);push(Y*w+w-1)}
+    while(qh<qt){const i=q[qh++],X=i%w,Y=(i/w)|0;if(X>0)push(i-1);if(X<w-1)push(i+1);if(Y>0)push(i-w);if(Y<h-1)push(i+w)}
+    for(let i=0;i<w*h;i++)if(vis[i])d[i*4+3]=0;x.putImageData(id,0,0)}
+  let x0=w,y0=h,x1=-1,y1=-1;for(let Y=0;Y<h;Y++)for(let X=0;X<w;X++)if(d[(Y*w+X)*4+3]>20){if(X<x0)x0=X;if(X>x1)x1=X;if(Y<y0)y0=Y;if(Y>y1)y1=Y}
+  if(x1<0)throw new Error('絵が見つかりませんでした（全部透明になっています）。「消す強さ」を下げてみてください。');
+  const pd=4;x0=Math.max(0,x0-pd);y0=Math.max(0,y0-pd);x1=Math.min(w-1,x1+pd);y1=Math.min(h-1,y1+pd);
+  const o=mk(x1-x0+1,y1-y0+1);o.getContext('2d').drawImage(c,x0,y0,o.width,o.height,0,0,o.width,o.height);
+  return {canvas:o,hasAlpha}}
+
+function chamfer(fg,W,H){const d=new Float32Array(W*H),R=Math.SQRT2;for(let i=0;i<W*H;i++)d[i]=fg[i]?0:1e9;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*W+x;let v=d[i];if(!v)continue;
+    if(x>0)v=Math.min(v,d[i-1]+1);if(y>0){v=Math.min(v,d[i-W]+1);if(x>0)v=Math.min(v,d[i-W-1]+R);if(x<W-1)v=Math.min(v,d[i-W+1]+R)}d[i]=v}
+  for(let y=H-1;y>=0;y--)for(let x=W-1;x>=0;x--){const i=y*W+x;let v=d[i];if(!v)continue;
+    if(x<W-1)v=Math.min(v,d[i+1]+1);if(y<H-1){v=Math.min(v,d[i+W]+1);if(x<W-1)v=Math.min(v,d[i+W+1]+R);if(x>0)v=Math.min(v,d[i+W-1]+R)}d[i]=v}
+  return d}
+const N8=[[-1,0],[-1,-1],[0,-1],[1,-1],[1,0],[1,1],[0,1],[-1,1]];
+const dirOf=(dx,dy)=>N8.findIndex(v=>v[0]===dx&&v[1]===dy);
+function trace(m,W,H){let s=-1;for(let i=0;i<W*H;i++)if(m[i]){s=i;break}
+  const pts=[];let cx=s%W,cy=(s/W)|0,b=0;const sx=cx,sy=cy,sb=0;
+  for(let it=0;it<W*H*4;it++){pts.push([cx,cy]);let ok=false;
+    for(let k=1;k<=8;k++){const dd=(b+k)%8,nx=cx+N8[dd][0],ny=cy+N8[dd][1];
+      if(m[ny*W+nx]){const pv=(b+k+7)%8,px=cx+N8[pv][0],py=cy+N8[pv][1];cx=nx;cy=ny;b=dirOf(px-nx,py-ny);ok=true;break}}
+    if(!ok||(cx===sx&&cy===sy&&b===sb))break}
+  return pts}
+function smoothPts(p,n){for(let k=0;k<n;k++){const L=p.length,o=new Array(L);for(let i=0;i<L;i++){let x=0,y=0;for(let j=-2;j<=2;j++){const q=p[(i+j+L)%L];x+=q[0];y+=q[1]}o[i]=[x/5,y/5]}p=o}return p}
+function rdp(p,eps){if(p.length<4)return p;const keep=new Uint8Array(p.length);keep[0]=keep[p.length-1]=1;const stack=[[0,p.length-1]];
+  while(stack.length){const [a,b]=stack.pop();const [ax,ay]=p[a],[bx,by]=p[b];const dx=bx-ax,dy=by-ay,len=Math.hypot(dx,dy)||1;let md=0,mi=-1;
+    for(let i=a+1;i<b;i++){const dd=Math.abs(dy*p[i][0]-dx*p[i][1]+bx*ay-by*ax)/len;if(dd>md){md=dd;mi=i}}
+    if(md>eps&&mi>0){keep[mi]=1;stack.push([a,mi],[mi,b])}}
+  return p.filter((_,i)=>keep[i])}
+
+function buildOutline(p){
+  const art=st.art,aw=art.width,ah=art.height,gs=Math.min(1,640/Math.max(aw,ah)),gw=aw*gs,gh=ah*gs,ppm=gh/p.h;
+  const hasBase=p.base!=='none',tabPx=hasBase?Math.round(p.baseT*ppm):0,mPx=p.margin*ppm;
+  const pad=Math.ceil(mPx)+3,W=Math.ceil(gw)+2*pad,H=Math.ceil(gh)+2*pad+tabPx+2;
+  const sc=mk(Math.ceil(gw),Math.ceil(gh)),sx=sc.getContext('2d',{willReadFrequently:true});sx.drawImage(art,0,0,gw,gh);
+  const ad=sx.getImageData(0,0,sc.width,sc.height).data;let m=new Uint8Array(W*H);
+  for(let y=0;y<sc.height;y++)for(let x=0;x<sc.width;x++)if(ad[(y*sc.width+x)*4+3]>40)m[(y+pad)*W+x+pad]=1;
+  if(mPx>0.5){const d=chamfer(m,W,H);for(let i=0;i<W*H;i++)m[i]=d[i]<=mPx?1:0}
+  // keep largest piece
+  const lab=new Int32Array(W*H),q=new Int32Array(W*H);let best=0,bestN=0,lbl=0,pieces=0;
+  for(let i=0;i<W*H;i++){if(!m[i]||lab[i])continue;lbl++;let h0=0,t0=0;q[t0++]=i;lab[i]=lbl;
+    while(h0<t0){const j=q[h0++],x=j%W,y=(j/W)|0;for(const [dx,dy] of N8){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=W||ny>=H)continue;const k=ny*W+nx;if(m[k]&&!lab[k]){lab[k]=lbl;q[t0++]=k}}}
+    if(t0>30)pieces++;if(t0>bestN){bestN=t0;best=lbl}}
+  for(let i=0;i<W*H;i++)m[i]=lab[i]===best?1:0;
+  let bottom=0;for(let i=W*H-1;i>=0;i--)if(m[i]){bottom=(i/W)|0;break}
+  const cx0=pad+gw/2;let origin=bottom;
+  if(hasBase){const tw=p.tabW*ppm,cx=cx0+p.tabX*ppm,xa=Math.max(1,Math.round(cx-tw/2)),xb=Math.min(W-2,Math.round(cx+tw/2)),gap=25*ppm;
+    for(let x=xa;x<=xb;x++){for(let y=bottom+1;y<=bottom+tabPx;y++)m[y*W+x]=1;
+      let y=bottom;while(y>bottom-gap&&y>1&&!m[y*W+x])y--;if(m[y*W+x])for(let yy=y;yy<=bottom;yy++)m[yy*W+x]=1}
+    origin=bottom+tabPx}
+  // fill holes
+  const out=new Uint8Array(W*H);let h1=0,t1=0;q[t1++]=0;out[0]=1;
+  while(h1<t1){const j=q[h1++],x=j%W,y=(j/W)|0;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=W||ny>=H)continue;const k=ny*W+nx;if(!m[k]&&!out[k]){out[k]=1;q[t1++]=k}}}
+  for(let i=0;i<W*H;i++)if(!out[i])m[i]=1;
+  let pts=rdp(smoothPts(trace(m,W,H),p.smooth),0.35);
+  pts=pts.map(([x,y])=>new THREE.Vector2((x-cx0)/ppm,(origin-y)/ppm));
+  return {pts,artW:gw/ppm,artH:p.h,artCY:(origin-(pad+gh/2))/ppm,pieces}}
+
+function whiteCanvas(p){const art=st.art,w=art.width,h=art.height,a=art.getContext('2d',{willReadFrequently:true}).getImageData(0,0,w,h).data;
+  const fg=new Uint8Array(w*h);for(let i=0;i<w*h;i++)fg[i]=a[i*4+3]>128?1:0;let keep=fg;
+  if(p.white==='choke'){const inv=new Uint8Array(w*h);for(let i=0;i<w*h;i++)inv[i]=1-fg[i];const d=chamfer(inv,w,h),r=0.2*h/p.h;keep=new Uint8Array(w*h);for(let i=0;i<w*h;i++)keep[i]=fg[i]&&d[i]>r?1:0}
+  const c=mk(w,h),x=c.getContext('2d'),id=x.createImageData(w,h);for(let i=0;i<w*h;i++){id.data[i*4]=id.data[i*4+1]=id.data[i*4+2]=255;id.data[i*4+3]=keep[i]?255:0}
+  x.putImageData(id,0,0);return c}
+
+/* ---------- build 3D ---------- */
+let firstFit=true,texCache=null;
+function clearStand(){stand.traverse(o=>{if(o.isMesh){o.geometry.dispose();if(o.material.map&&o.material.map!==texCache)o.material.map.dispose();if(!/acrylic|base_/.test(o.material.name))o.material.dispose()}});stand.clear()}
+function build(){
+  if(!st.art)return;const p=P();applyLook();
+  let o;try{o=buildOutline(p)}catch(e){msg('形の計算でつまずきました。余白やなめらかさを変えてみてください。',true);return}
+  clearStand();
+  const shape=new THREE.Shape(o.pts),bv=Math.min(0.35,p.t*0.12);
+  const g=new THREE.ExtrudeGeometry(shape,{depth:p.t-2*bv,bevelEnabled:true,bevelThickness:bv,bevelSize:bv,bevelOffset:-bv,bevelSegments:3,curveSegments:1});
+  g.translate(0,0,-(p.t-2*bv)/2);
+  const plate=new THREE.Mesh(g,acrylic);plate.name='acrylic_plate';stand.add(plate);
+  // printed art (reverse-printed on the back face)
+  if(!texCache){texCache=new THREE.CanvasTexture(st.art);texCache.colorSpace=THREE.SRGBColorSpace;texCache.anisotropy=renderer.capabilities.getMaxAnisotropy()}
+  const pg=new THREE.PlaneGeometry(o.artW,o.artH);
+  const ink=new THREE.MeshStandardMaterial({map:texCache,alphaTest:0.5,roughness:0.55,side:p.white==='none'?THREE.DoubleSide:THREE.FrontSide,name:'print_ink'});
+  const pm=new THREE.Mesh(pg,ink);pm.name='print';pm.position.set(0,o.artCY,-p.t/2-0.03);pm.castShadow=true;stand.add(pm);
+  if(p.white!=='none'){let wm;
+    if(p.white==='full'){wm=new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(o.pts.map(v=>v.clone().multiplyScalar(1)))),null);wm.position.z=-p.t/2-0.08}
+    else{const t=new THREE.CanvasTexture(whiteCanvas(p));t.colorSpace=THREE.SRGBColorSpace;wm=new THREE.Mesh(pg.clone(),null);wm.userData.tex=t;wm.position.set(0,o.artCY,-p.t/2-0.08)}
+    wm.material=new THREE.MeshStandardMaterial({color:0xffffff,map:wm.userData.tex||null,alphaTest:0.5,roughness:0.75,side:THREE.DoubleSide,name:'white_ink'});
+    wm.name='white_plate';wm.castShadow=true;stand.add(wm)}
+  // base
+  const box=new THREE.Box2().setFromPoints(o.pts),pw=box.max.x-box.min.x,ph=box.max.y-box.min.y;
+  let bw=0,bd=0;
+  if(p.base!=='none'){bw=Math.max(pw*p.baseSize,2*Math.abs(p.tabX)+p.tabW+14);bd=p.base==='circle'?bw:Math.max(Math.min(bw*0.62,90),Math.max(30,p.t*6));
+    const s=new THREE.Shape();
+    if(p.base==='round'){const r=Math.min(10,bd/3),x=-bw/2,y=-bd/2;s.moveTo(x+r,y);s.lineTo(x+bw-r,y);s.quadraticCurveTo(x+bw,y,x+bw,y+r);s.lineTo(x+bw,y+bd-r);s.quadraticCurveTo(x+bw,y+bd,x+bw-r,y+bd);s.lineTo(x+r,y+bd);s.quadraticCurveTo(x,y+bd,x,y+bd-r);s.lineTo(x,y+r);s.quadraticCurveTo(x,y,x+r,y)}
+    else s.absellipse(0,0,bw/2,bd/2,0,Math.PI*2,false);
+    const sw=p.tabW+0.2,sd=p.t+0.2,hx=p.tabX,hole=new THREE.Path();hole.moveTo(hx-sw/2,-sd/2);hole.lineTo(hx+sw/2,-sd/2);hole.lineTo(hx+sw/2,sd/2);hole.lineTo(hx-sw/2,sd/2);hole.closePath();s.holes.push(hole);
+    const bb=Math.min(0.5,p.baseT*0.15),bg=new THREE.ExtrudeGeometry(s,{depth:p.baseT-2*bb,bevelEnabled:true,bevelThickness:bb,bevelSize:bb,bevelOffset:-bb,bevelSegments:3,curveSegments:64});
+    bg.translate(0,0,bb);bg.rotateX(-Math.PI/2);
+    const mat={clear:baseClear,white:baseWhite,black:baseBlack}[p.baseMat];
+    const base=new THREE.Mesh(bg,mat);base.name='base';base.castShadow=p.baseMat!=='clear';base.receiveShadow=true;stand.add(base);st.baseShape=s}
+  else st.baseShape=null;
+  st.model={o,pw,ph,bw,bd,p};
+  $('sizeInfo').textContent=`板 ${pw.toFixed(1)} × ${ph.toFixed(1)} mm`;
+  $('thickInfo').textContent=p.base==='none'?`厚み ${p.t}mm・台座なし`:`厚み ${p.t}mm・台座 ${bw.toFixed(0)} × ${bd.toFixed(0)} mm`;
+  if(o.pieces>1)msg(`離れたパーツが${o.pieces-1}個あり、いちばん大きい形だけ使っています。「カット余白」を増やすとつながります。`,true);else if($('msg').className==='warn')msg('');
+  if(firstFit){fit('side');firstFit=false}}
+function fit(mode){if(!st.model)return;const {ph,pw,bd}=st.model,size=Math.max(ph,pw*0.9,bd||0),dist=size*2.3,ty=ph*0.48;
+  const dir={front:[0,0.12,1],back:[0,0.12,-1],side:[0.62,0.32,0.9]}[mode];const v=new THREE.Vector3(...dir).normalize().multiplyScalar(dist);
+  controls.target.set(0,ty,0);camera.position.set(v.x,v.y+ty,v.z);controls.update();
+  for(const [id,m] of [['vFront','front'],['vSide','side'],['vBack','back']])$(id).setAttribute('aria-pressed',m===mode)}
+
+let timer=0;const later=()=>{clearTimeout(timer);timer=setTimeout(build,90)};
+for(const id of ['margin','smooth','h','t','white','base','baseSize','baseT','tabW','tabX','baseMat'])$(id).addEventListener('input',later);
+for(const id of ['gloss','tint','rainbow'])$(id).addEventListener('input',applyLook);
+for(const id of ['bg','tol'])$(id).addEventListener('change',()=>{if(st.src)loadImage(st.src,false)});
+$('vFront').onclick=()=>fit('front');$('vSide').onclick=()=>fit('side');$('vBack').onclick=()=>fit('back');
+$('vSpin').onclick=()=>{controls.autoRotate=!controls.autoRotate;$('vSpin').setAttribute('aria-pressed',controls.autoRotate)};
+
+function loadImage(img,isNew){try{const r=prepareArt(img,P());st.art=r.canvas;st.src=img;if(texCache){texCache.dispose();texCache=null}
+  if(isNew){firstFit=true;st.artIsSample=false;$('sampleNote').textContent='読み込んだ画像で作っています。'}
+  msg(r.hasAlpha?'透明背景のPNGを検出しました。そのまま切り抜いています。':(P().bg?'背景色を自動で消しました。残りがあれば「消す強さ」を調整してください。':'背景を消さずに使っています。'));build()}
+  catch(e){msg(e.message,true)}}
+function readFile(f){if(!f||!f.type.startsWith('image/')){msg('画像ファイルを選んでください。',true);return}
+  const url=URL.createObjectURL(f),img=new Image();img.onload=()=>{loadImage(img,true);st.fileName=f.name.replace(/\.[^.]+$/,'')};img.onerror=()=>msg('この画像は読み込めませんでした。PNGかJPGで試してください。',true);img.src=url}
+$('file').addEventListener('change',e=>readFile(e.target.files[0]));
+const stage=$('stage');
+stage.addEventListener('dragover',e=>{e.preventDefault();stage.classList.add('over')});
+stage.addEventListener('dragleave',e=>{if(e.target===stage||!stage.contains(e.relatedTarget))stage.classList.remove('over')});
+stage.addEventListener('drop',e=>{e.preventDefault();stage.classList.remove('over');readFile(e.dataTransfer.files[0])});
+
+/* ---------- export ---------- */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=u=>{let c=0xffffffff;for(let i=0;i<u.length;i++)c=CRC[(c^u[i])&255]^(c>>>8);return (c^0xffffffff)>>>0};
+function zip(files){const enc=new TextEncoder(),parts=[],cd=[];let off=0;
+  for(const f of files){const name=enc.encode(f.name),crc=crc32(f.data),h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);h.setUint16(10,0,true);h.setUint16(12,0x21,true);
+    h.setUint32(14,crc,true);h.setUint32(18,f.data.length,true);h.setUint32(22,f.data.length,true);h.setUint16(26,name.length,true);h.setUint16(28,0,true);
+    parts.push(h,name,f.data);const c=new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(10,0,true);c.setUint16(12,0,true);c.setUint16(14,0x21,true);
+    c.setUint32(16,crc,true);c.setUint32(20,f.data.length,true);c.setUint32(24,f.data.length,true);c.setUint16(28,name.length,true);c.setUint32(42,off,true);
+    cd.push(c,name);off+=30+name.length+f.data.length}
+  const cdSize=cd.reduce((s,x)=>s+x.byteLength,0),e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cdSize,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...cd,e],{type:'application/zip'})}
+const dlReady=(window.claude&&typeof window.claude.use==='function')?window.claude.use('downloads').catch(()=>null):Promise.resolve(null);
+async function save(name,blob){const dl=await dlReady;
+  if(dl){try{await dl.save({filename:name,data:blob});msg(`「${name}」を保存しました。`)}
+    catch(e){msg(e&&e.code==='declined'?'保存はキャンセルされました。':e&&e.code==='rate_limited'?'少し待ってからもう一度押してください。':'この画面では保存できませんでした。ブラウザでページを開いて試してください。',true)}return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();msg(`「${name}」を保存しました。`)}
+const base=()=>st.fileName||'acrylic_stand';
+const canvasBlob=c=>new Promise(r=>c.toBlob(r,'image/png'));
+async function glbBytes(){const root=new THREE.Group();root.name='acrylic_stand';root.scale.setScalar(0.001);root.add(stand.clone(true));
+  const mats=[acrylic,baseClear],keep=mats.map(m=>m.attenuationDistance);mats.forEach(m=>m.attenuationDistance*=0.001);
+  try{const buf=await new GLTFExporter().parseAsync(root,{binary:true});return new Uint8Array(buf)}finally{mats.forEach((m,i)=>m.attenuationDistance=keep[i])}}
+function cutSVG(){const {o,p}=st.model,pts=o.pts,b=new THREE.Box2().setFromPoints(pts),m=3;let minX=b.min.x,maxX=b.max.x,maxY=b.max.y,minY=b.min.y;
+  const bs=st.baseShape?st.baseShape.getPoints(64):null,bh=st.baseShape?st.baseShape.holes[0].getPoints():null;
+  const gapX=bs?(maxX-minX)+12:0;let bMinX=0,bMaxX=0,bMinY=0,bMaxY=0;
+  if(bs){const bb=new THREE.Box2().setFromPoints(bs);bMinX=bb.min.x;bMaxX=bb.max.x;bMinY=bb.min.y;bMaxY=bb.max.y}
+  const W=(maxX-minX)+(bs?12+(bMaxX-bMinX):0)+2*m,H=Math.max(maxY-minY,bs?bMaxY-bMinY:0)+2*m;
+  const f=v=>v.toFixed(3),P1=pts.map((v,i)=>(i?'L':'M')+f(v.x-minX+m)+' '+f(maxY-v.y+m)).join('')+'Z';
+  const ox=m+(maxX-minX)+12-bMinX,oy=m-bMinY;const path=a=>a.map((v,i)=>(i?'L':'M')+f(v.x+ox)+' '+f(v.y+oy)).join('')+'Z';
+  const artL=-o.artW/2-minX+m,artT=maxY-(o.artCY+o.artH/2)+m;
+  return {svg:`<svg xmlns="http://www.w3.org/2000/svg" width="${f(W)}mm" height="${f(H)}mm" viewBox="0 0 ${f(W)} ${f(H)}">
+<g id="art_area" fill="none" stroke="#00a0e9" stroke-width="0.1" stroke-dasharray="1 1"><rect x="${f(artL)}" y="${f(artT)}" width="${f(o.artW)}" height="${f(o.artH)}"/></g>
+<g id="cut_line" fill="none" stroke="#e6007e" stroke-width="0.1"><path d="${P1}"/>${bs?`<path d="${path(bs)}"/><path d="${path(bh)}"/>`:''}</g>
+</svg>`,plate:P1,W,H}}
+$('expGlb').onclick=async()=>{if(!st.model)return;msg('3Dデータを作っています…');try{const g=await glbBytes();await save(base()+'_glb.zip',zip([{name:base()+'.glb',data:g}]))}catch(e){msg('GLBの書き出しに失敗しました。',true)}};
+$('expPng').onclick=async()=>{renderer.render(scene,camera);await save(base()+'_preview.png',await canvasBlob(renderer.domElement))};
+$('expKit').onclick=async()=>{if(!st.model)return;msg('入稿用データをまとめています…');const p=st.model.p,enc=new TextEncoder(),files=[];
+  const toU8=async b=>new Uint8Array(await b.arrayBuffer());
+  files.push({name:'1_print.png',data:await toU8(await canvasBlob(st.art))});
+  const cs=cutSVG();files.push({name:'3_cutline.svg',data:enc.encode(cs.svg)});
+  if(p.white==='full')files.push({name:'2_white_K100.svg',data:enc.encode(`<svg xmlns="http://www.w3.org/2000/svg" width="${cs.W.toFixed(3)}mm" height="${cs.H.toFixed(3)}mm" viewBox="0 0 ${cs.W.toFixed(3)} ${cs.H.toFixed(3)}"><path d="${cs.plate}" fill="#000"/></svg>`)});
+  else if(p.white!=='none'){const w=whiteCanvas(p),k=mk(w.width,w.height),x=k.getContext('2d');x.drawImage(w,0,0);x.globalCompositeOperation='source-in';x.fillStyle='#000';x.fillRect(0,0,k.width,k.height);files.push({name:'2_white_K100.png',data:await toU8(await canvasBlob(k))})}
+  files.push({name:'0_README.txt',data:enc.encode(`アクスタ入稿用データ\n絵の高さ: ${p.h}mm / 板厚: ${p.t}mm / カット余白: ${p.margin}mm\n\n1_print.png  … 印刷する絵柄（${p.h}mm の高さで配置）\n2_white_K100 … 白版。白インクを置く範囲を黒(K100)で表しています\n3_cutline.svg … カットライン（マゼンタ）。青い点線は絵柄の配置範囲。台座がある場合は右側に台座と差し込み穴\n\n※印刷会社ごとに入稿ルールが違うので、テンプレートに合わせて配置し直してください。\n`)});
+  try{files.push({name:'4_preview3d.glb',data:await glbBytes()})}catch(e){}
+  await save(base()+'_入稿セット.zip',zip(files))};
+
+/* ---------- sample character (original) ---------- */
+function sample(){const c=mk(900,1100),x=c.getContext('2d');x.lineJoin='round';x.lineCap='round';const ink='#2a2230';
+  const star=(cx,cy,r,rot)=>{x.beginPath();for(let i=0;i<10;i++){const a=rot+i*Math.PI/5,rr=i%2?r*0.48:r;x.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr)}x.closePath()};
+  x.lineWidth=16;x.strokeStyle=ink;
+  star(640,220,150,-Math.PI/2);x.fillStyle='#ffd23f';x.fill();x.stroke();
+  x.beginPath();x.moveTo(300,330);x.quadraticCurveTo(250,140,380,220);x.quadraticCurveTo(360,300,300,330);x.fillStyle='#ff8fb8';x.fill();x.stroke();
+  x.beginPath();x.moveTo(600,360);x.quadraticCurveTo(700,190,700,330);x.fillStyle='#ff8fb8';x.fill();x.stroke();
+  x.beginPath();x.ellipse(450,640,330,330,0,0,Math.PI*2);x.fillStyle='#fff4f8';x.fill();x.stroke();
+  x.beginPath();x.ellipse(450,920,250,120,0,0,Math.PI*2);x.fillStyle='#fff4f8';x.fill();x.stroke();
+  x.beginPath();x.ellipse(450,640,325,325,0,0,Math.PI*2);x.fillStyle='#fff4f8';x.fill();
+  x.beginPath();x.moveTo(560,450);x.quadraticCurveTo(650,330,690,300);x.stroke();
+  x.fillStyle=ink;for(const ex of [340,560]){x.beginPath();x.ellipse(ex,610,30,44,0,0,Math.PI*2);x.fill()}
+  x.fillStyle='#fff';for(const ex of [350,570]){x.beginPath();x.arc(ex,592,11,0,Math.PI*2);x.fill()}
+  x.fillStyle='#ff9ec0';for(const ex of [270,630]){x.beginPath();x.ellipse(ex,690,50,28,0,0,Math.PI*2);x.fill()}
+  x.lineWidth=12;x.beginPath();x.moveTo(410,690);x.quadraticCurveTo(430,720,450,690);x.quadraticCurveTo(470,720,490,690);x.stroke();
+  x.fillStyle='#6fd3ff';x.lineWidth=10;star(170,420,46,0.3);x.fill();x.stroke();star(790,560,36,0.1);x.fillStyle='#b69bff';x.fill();x.stroke();
+  return c}
+loadImage(sample(),false);
+</script>
+</body>
+</html>
