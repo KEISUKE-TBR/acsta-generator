@@ -138,7 +138,7 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
 <div class="app">
   <main class="stage" id="stage">
     <div id="view"></div>
-    <div class="chip"><span class="glass" data-tip="板のサイズ"><span class="ms">straighten</span><span id="sizeInfo">…</span></span><span class="glass" data-tip="厚み・台座"><span class="ms">layers</span><span id="thickInfo"></span></span></div>
+    <div class="chip"><span class="glass" data-tip="板のサイズ"><span class="ms">straighten</span><span id="sizeInfo">…</span></span><span class="glass" data-tip="厚み・台座"><span class="ms">layers</span><span id="thickInfo"></span></span><span class="glass" data-tip="書き出すGLBのおおよそのサイズ"><span class="ms">save</span><span id="fileSize">…</span></span></div>
     <div class="tools glass">
       <button class="ib" id="undo" disabled data-tip="元に戻す ⌘Z"><span class="ms">undo</span></button>
       <button class="ib" id="redo" disabled data-tip="やり直す ⇧⌘Z"><span class="ms">redo</span></button>
@@ -492,7 +492,7 @@ function build(){
   if(o.pieces>1)msg(`離れたパーツ${o.pieces-1}個を除外中（余白を増やすとつながります）`,true);
   else if(warnSlot)msg('差し込み穴が台座の絵からはみ出しています。位置を調整してください',true);
   else if($('msg').className==='warn')msg('');
-  for(const m of [st.pm,st.wm,st.baseGroup])if(m)m.userData.p0=m.position.clone();setExplode(ex.v);drawPreview(o);drawBasePreview(p);summaries(p,pw,ph);
+  for(const m of [st.pm,st.wm,st.baseGroup])if(m)m.userData.p0=m.position.clone();setExplode(ex.v);drawPreview(o);drawBasePreview(p);summaries(p,pw,ph);estimateSize();
   if(firstFit){fit('side');firstFit=false}}
 function fit(mode){if(!st.model)return;const {ph,pw,bd}=st.model,vt=Math.tan(THREE.MathUtils.degToRad(camera.fov/2)),ht=vt*camera.aspect,dist=Math.max((ph+12)/(2*vt),(Math.max(pw,bd||0)+12)/(2*ht))*1.35,ty=ph*0.48;
   const dir={front:[0,0.12,1],back:[0,0.12,-1],side:[0.62,0.32,0.9]}[mode];const v=new THREE.Vector3(...dir).normalize().multiplyScalar(dist);
@@ -566,6 +566,18 @@ $('panel').addEventListener('change',e=>{const i=e.target;if(!i.matches('[data-k
  document.addEventListener('focusin',e=>{const el=e.target.closest('[data-tip]');if(el&&e.target.matches(':focus-visible'))show(el)});
  document.addEventListener('focusout',hide);addEventListener('scroll',hide,true)}
 
+
+/* ---------- GLBサイズの見積もり（形状データ＋PNG化した画像の実サイズから計算） ---------- */
+const pngBytes=new WeakMap();
+const pngSize=c=>pngBytes.has(c)?Promise.resolve(pngBytes.get(c)):new Promise(r=>c.toBlob(b=>{const n=b?b.size:0;pngBytes.set(c,n);r(n)},'image/png'));
+let sizeTimer=0,sizeSeq=0;
+const fmtBytes=n=>n<1024*1024?`約 ${Math.max(1,Math.round(n/1024))} KB`:`約 ${(n/1024/1024).toFixed(1)} MB`;
+function showSize(){if(st.sizeOne==null)return;const all=rv('glbTarget')==='all';$('fileSize').textContent=fmtBytes(st.sizeOne*(all?4:1))+(all?'（全部）':'')}
+function estimateSize(){clearTimeout(sizeTimer);sizeTimer=setTimeout(async()=>{const seq=++sizeSeq;let geo=0;const imgs=new Set();
+  stand.traverse(o=>{if(!o.isMesh)return;const g=o.geometry;for(const k in g.attributes){const at=g.attributes[k];geo+=at.count*at.itemSize*4}
+    if(g.index)geo+=g.index.count*g.index.array.BYTES_PER_ELEMENT;const m=o.material;if(m&&m.map&&m.map.image)imgs.add(m.map.image)});
+  let tex=0;for(const c of imgs)tex+=await pngSize(c);if(seq!==sizeSeq)return;st.sizeOne=geo+tex+6000;showSize()},350)}
+for(const r of document.querySelectorAll('input[name=glbTarget]'))r.addEventListener('change',showSize);
 /* ---------- tabs ---------- */
 for(const t of document.querySelectorAll('.tab'))t.onclick=()=>{for(const u of document.querySelectorAll('.tab')){const on=u===t;u.setAttribute('aria-selected',on);$(u.getAttribute('aria-controls')).hidden=!on}};
 document.querySelector('.tabs').addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;const ts=[...document.querySelectorAll('.tab')],i=ts.indexOf(document.activeElement);if(i<0)return;const n=ts[(i+(e.key==='ArrowRight'?1:ts.length-1))%ts.length];n.focus();n.click()});
