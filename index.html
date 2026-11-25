@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>アクスタジェネレーター</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..600,0..1,0&display=block" rel="stylesheet">
 <style>
 /* VOICE: 印刷所の作業台。静かで正確、主役は3Dのアクスタ
    IDEA: 入稿前の校正台 — 透明な板、白版、カットライン
    PICTURE: 画面の大半を占める3Dビュー＋切り抜き結果の2Dプレビュー
-   COLOUR and TYPE: 白い台＋墨＋プロセスマゼンタ（カットラインの色）。Zen Kaku Gothic New＋Material Symbols Rounded
+   COLOUR and TYPE: 白い台＋墨＋プロセスマゼンタ（カットラインの色）。M PLUS 2＋Material Symbols Rounded
    LAYOUT: 左に大きなステージとツールバー、右にアイコン付きの折りたたみパネル。狭い画面では縦積み */
 :root{color-scheme:light dark;--bg:light-dark(#ffffff,#141416);--ink:light-dark(#151517,#f2f2f4);--sub:light-dark(#5d5d64,#a5a5ad);--line:light-dark(#e7e5e1,#2b2b30);--field:light-dark(#f3f2ef,#1e1e22);--raise:light-dark(#ffffff,#2c2c32);--acc:#e6007e;--accSoft:light-dark(#fde6f2,#3a1229);--st1:light-dark(#f6f4f0,#2b2a31);--st2:light-dark(#d6d2ca,#0e0e11)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Zen Kaku Gothic New",system-ui,sans-serif;overflow-x:clip}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "M PLUS 2",system-ui,sans-serif;overflow-x:clip}
 .ms{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;font-size:22px;line-height:1;display:inline-block;white-space:nowrap;letter-spacing:normal;text-transform:none;font-feature-settings:'liga';-webkit-font-smoothing:antialiased;font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;user-select:none;flex:none;width:1em;overflow:hidden}
 .app{display:grid;grid-template-columns:minmax(0,1fr) 392px;height:100vh}
 .stage{position:relative;overflow:hidden;background:linear-gradient(var(--st1),var(--st2))}
@@ -92,6 +92,22 @@ input[type=range]{width:100%;accent-color:var(--acc);height:28px}
 #msg{display:flex;gap:8px;align-items:flex-start;min-height:1.5em;font-size:14px;margin:14px 0 0;color:var(--sub)}#msg:empty{display:none}
 #msg.warn{color:var(--acc);font-weight:700}
 .probe1{background:var(--st1)}.probe2{background:var(--st2)}.probe1,.probe2{position:absolute;width:0;height:0}
+
+.sep{width:1px;align-self:stretch;margin:8px 3px;background:var(--line)}
+.viewbar .ib{width:48px;height:48px}
+.upl{grid-template-columns:minmax(0,1fr) 96px!important}
+.bigbtn{display:grid;place-items:center;height:100%;min-height:96px;border-radius:13px;background:var(--acc);color:#fff;cursor:pointer}
+.bigbtn .ms{font-size:36px}.bigbtn:hover{filter:brightness(1.08)}
+.row{grid-template-columns:24px minmax(0,1fr) 3.6em!important}
+.check{justify-content:space-between}.check>.ms{font-size:20px;color:var(--sub)}
+.seg+.seg,.seg+.row,.row+.seg{margin-top:10px}
+.seg label{min-height:46px;font-size:16px;font-weight:700}
+summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--ink)}
+.exp{grid-template-columns:minmax(0,1fr) 56px 56px;padding-top:16px;border-top:1px solid var(--line)}
+.exp .btn{justify-content:center;padding:0}
+.legend{flex-direction:row!important;flex-wrap:wrap;gap:12px!important}
+#tip{position:fixed;z-index:50;pointer-events:none;background:var(--ink);color:var(--bg);font-size:13px;font-weight:500;line-height:1.4;padding:5px 10px;border-radius:8px;max-width:240px;opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s}
+#tip.on{opacity:1;transform:none}
 @media(max-width:900px){.app{grid-template-columns:1fr;height:auto}.stage{position:sticky;top:0;z-index:2;height:52vh;min-height:340px}.panel{border-left:0;overflow:visible}}
 @media(max-width:600px){.vb{min-width:52px;padding:6px 4px 4px}.chip{display:none}.legend{bottom:80px}}
 @media(prefers-reduced-motion:reduce){.busy .ms{animation:none}}
@@ -102,23 +118,24 @@ input[type=range]{width:100%;accent-color:var(--acc);height:28px}
 <div class="app">
   <main class="stage" id="stage">
     <div id="view"></div>
-    <div class="chip"><span class="glass"><span class="ms">straighten</span><span id="sizeInfo">準備中…</span></span><span class="glass"><span class="ms">layers</span><span id="thickInfo"></span></span></div>
+    <div class="chip"><span class="glass" data-tip="板のサイズ"><span class="ms">straighten</span><span id="sizeInfo">…</span></span><span class="glass" data-tip="厚み・台座"><span class="ms">layers</span><span id="thickInfo"></span></span></div>
     <div class="tools glass">
-      <button class="ib" id="undo" disabled aria-label="元に戻す"><span class="ms">undo</span><span class="tip">元に戻す（⌘Z）</span></button>
-      <button class="ib" id="redo" disabled aria-label="やり直す"><span class="ms">redo</span><span class="tip">やり直す（⇧⌘Z）</span></button>
-      <button class="ib" id="reset" aria-label="最初の設定に戻す"><span class="ms">restart_alt</span><span class="tip">設定をリセット</span></button>
+      <button class="ib" id="undo" disabled data-tip="元に戻す ⌘Z"><span class="ms">undo</span></button>
+      <button class="ib" id="redo" disabled data-tip="やり直す ⇧⌘Z"><span class="ms">redo</span></button>
+      <button class="ib" id="reset" data-tip="設定をリセット"><span class="ms">restart_alt</span></button>
     </div>
-    <div class="legend glass"><b>分解ビュー（手前から）</b><span><i style="background:#cfeee4;border:1px solid #9bc"></i>アクリル板</span><span><i style="background:linear-gradient(90deg,#ff8fb8,#ffd23f)"></i>絵柄（裏刷り）</span><span><i style="background:#fff;border:1px solid #aaa"></i>白版</span><span><i style="background:#bbb"></i>台座</span></div>
+    <div class="legend glass"><span><i style="background:#cfeee4;border:1px solid #9bc"></i>アクリル</span><span><i style="background:linear-gradient(90deg,#ff8fb8,#ffd23f)"></i>絵柄</span><span><i style="background:#fff;border:1px solid #aaa"></i>白版</span><span><i style="background:#bbb"></i>台座</span></div>
     <div class="viewbar glass">
-      <button class="vb" id="vFront" aria-pressed="false"><span class="ms">crop_portrait</span>正面</button>
-      <button class="vb" id="vSide" aria-pressed="false"><span class="ms">3d_rotation</span>ななめ</button>
-      <button class="vb" id="vBack" aria-pressed="false"><span class="ms">flip</span>裏面</button>
-      <button class="vb" id="vSpin" aria-pressed="true"><span class="ms">autorenew</span>回転</button>
-      <button class="vb" id="vExplode" aria-pressed="false"><span class="ms">stacks</span>分解</button>
-      <button class="vb" id="vGrid" aria-pressed="false"><span class="ms">grid_4x4</span>方眼</button>
+      <button class="ib" id="vFront" aria-pressed="false" data-tip="正面"><span class="ms">crop_portrait</span></button>
+      <button class="ib" id="vSide" aria-pressed="false" data-tip="ななめ"><span class="ms">3d_rotation</span></button>
+      <button class="ib" id="vBack" aria-pressed="false" data-tip="裏面"><span class="ms">flip</span></button>
+      <span class="sep"></span>
+      <button class="ib" id="vSpin" aria-pressed="true" data-tip="自動回転"><span class="ms">autorenew</span></button>
+      <button class="ib" id="vExplode" aria-pressed="false" data-tip="分解して構造を見る"><span class="ms">stacks</span></button>
+      <button class="ib" id="vGrid" aria-pressed="false" data-tip="方眼（1マス10mm）"><span class="ms">grid_4x4</span></button>
     </div>
-    <div class="drop"><span class="ms">add_photo_alternate</span>ここに画像をドロップ</div>
-    <div class="busy"><span class="ms">progress_activity</span>切り抜いています…</div>
+    <div class="drop"><span class="ms">add_photo_alternate</span></div>
+    <div class="busy"><span class="ms">progress_activity</span></div>
     <div class="probe1" id="p1"></div><div class="probe2" id="p2"></div>
   </main>
 
@@ -126,105 +143,92 @@ input[type=range]{width:100%;accent-color:var(--acc);height:28px}
     <div class="brand"><span class="ms">view_in_ar</span><h1>アクスタジェネレーター</h1></div>
 
     <div class="upl">
-      <div class="thumb" title="切り抜き結果（マゼンタ線がカットライン）"><canvas id="prev" width="264" height="264"></canvas></div>
-      <div class="txt">
-        <label class="btn acc" for="file"><span class="ms">add_photo_alternate</span>画像を選ぶ</label>
-        <input type="file" id="file" accept="image/*" hidden>
-        <small id="sampleNote">いまはサンプルのキャラクターです。画面にドロップしてもOK。透明PNGがいちばんきれい。</small>
-      </div>
+      <div class="thumb" data-tip="切り抜き結果（マゼンタ＝カットライン）"><canvas id="prev" width="264" height="264"></canvas></div>
+      <label class="bigbtn" for="file" data-tip="画像を選ぶ（ドロップもOK・透明PNG推奨）"><span class="ms">add_photo_alternate</span></label>
+      <input type="file" id="file" accept="image/*" hidden>
     </div>
 
     <div class="presets" role="group" aria-label="プリセット">
-      <button class="pre" data-pre="std"><span class="ms">star</span>標準</button>
-      <button class="pre" data-pre="mini"><span class="ms">photo_size_select_small</span>ミニ</button>
-      <button class="pre" data-pre="lux"><span class="ms">diamond</span>厚手</button>
-      <button class="pre" data-pre="big"><span class="ms">open_in_full</span>BIG</button>
+      <button class="pre" data-pre="std" data-tip="標準 100mm・3mm厚"><span class="ms">star</span></button>
+      <button class="pre" data-pre="mini" data-tip="ミニ 50mm"><span class="ms">photo_size_select_small</span></button>
+      <button class="pre" data-pre="lux" data-tip="厚手で高級 120mm・5mm厚"><span class="ms">diamond</span></button>
+      <button class="pre" data-pre="big" data-tip="BIG 180mm・5mm厚"><span class="ms">open_in_full</span></button>
     </div>
 
     <details open>
-      <summary><span class="ms lead">content_cut</span>切り抜き<span class="val" id="sumCut"></span><span class="ms chev">expand_more</span></summary>
+      <summary data-tip="切り抜き"><span class="ms lead">content_cut</span><span class="val" id="sumCut"></span><span class="ms chev">expand_more</span></summary>
       <div class="body">
-        <label class="check"><input type="checkbox" id="bg" data-k checked><span class="switch"></span>背景を自動で消す（JPGなど透明がない画像）</label>
-        <div class="row"><span class="ms">ink_eraser</span><label for="tol">消す強さ</label><input type="range" id="tol" data-k min="5" max="120" value="40"><output data-for="tol"></output></div>
-        <div class="row"><span class="ms">border_outer</span><label for="margin">カット余白</label><input type="range" id="margin" data-k min="0.5" max="8" step="0.5" value="2.5" data-unit="mm"><output data-for="margin"></output></div>
-        <div class="row"><span class="ms">gesture</span><label for="smooth">なめらかさ</label><input type="range" id="smooth" data-k min="0" max="8" value="4"><output data-for="smooth"></output></div>
-        <p class="hint"><span class="ms">info</span>余白は絵のふちからカットラインまでの距離。2〜3mmが一般的です。</p>
+        <label class="check" data-tip="背景を自動で消す（透明がない画像用）"><span class="ms">auto_fix_high</span><input type="checkbox" id="bg" data-k checked aria-label="背景を自動で消す"><span class="switch"></span></label>
+        <div class="row" data-tip="背景を消す強さ"><span class="ms">ink_eraser</span><input type="range" id="tol" data-k min="5" max="120" value="40" aria-label="背景を消す強さ"><output data-for="tol"></output></div>
+        <div class="row" data-tip="カット余白（絵からカットラインまで）"><span class="ms">border_outer</span><input type="range" id="margin" data-k min="0.5" max="8" step="0.5" value="2.5" data-unit="mm" aria-label="カット余白"><output data-for="margin"></output></div>
+        <div class="row" data-tip="輪郭のなめらかさ"><span class="ms">gesture</span><input type="range" id="smooth" data-k min="0" max="8" value="4" aria-label="輪郭のなめらかさ"><output data-for="smooth"></output></div>
       </div>
     </details>
 
     <details open>
-      <summary><span class="ms lead">straighten</span>サイズと板<span class="val" id="sumSize"></span><span class="ms chev">expand_more</span></summary>
+      <summary data-tip="サイズと板の厚み"><span class="ms lead">straighten</span><span class="val" id="sumSize"></span><span class="ms chev">expand_more</span></summary>
       <div class="body">
-        <div class="row"><span class="ms">height</span><label for="h">絵の高さ</label><input type="range" id="h" data-k min="30" max="200" value="100" data-unit="mm"><output data-for="h"></output></div>
-        <div class="lbl"><span class="ms">layers</span>板の厚み</div>
+        <div class="row" data-tip="絵の高さ"><span class="ms">height</span><input type="range" id="h" data-k min="30" max="200" value="100" data-unit="mm" aria-label="絵の高さ"><output data-for="h"></output></div>
         <div class="seg" role="radiogroup" aria-label="板の厚み">
-          <label><input type="radio" name="t" value="2" data-k>2mm<small>薄め</small></label>
-          <label><input type="radio" name="t" value="3" data-k checked>3mm<small>標準</small></label>
-          <label><input type="radio" name="t" value="5" data-k>5mm<small>厚手</small></label>
-          <label><input type="radio" name="t" value="8" data-k>8mm<small>ブロック</small></label>
+          <label data-tip="2mm 薄め"><input type="radio" name="t" value="2" data-k>2</label>
+          <label data-tip="3mm 標準"><input type="radio" name="t" value="3" data-k checked>3</label>
+          <label data-tip="5mm 厚手"><input type="radio" name="t" value="5" data-k>5</label>
+          <label data-tip="8mm ブロック"><input type="radio" name="t" value="8" data-k>8</label>
         </div>
       </div>
     </details>
 
     <details open>
-      <summary><span class="ms lead">print</span>白版<span class="val" id="sumWhite"></span><span class="ms chev">expand_more</span></summary>
+      <summary data-tip="白版（絵の後ろに敷く白インク）"><span class="ms lead">print</span><span class="val" id="sumWhite"></span><span class="ms chev">expand_more</span></summary>
       <div class="body">
         <div class="seg" role="radiogroup" aria-label="白版">
-          <label title="絵柄の形どおりに白を敷く"><input type="radio" name="white" value="match" data-k checked><span class="ms">brush</span>絵柄どおり</label>
-          <label title="白を少し内側に縮めて、ふちのはみ出しを防ぐ"><input type="radio" name="white" value="choke" data-k><span class="ms">zoom_in_map</span>少し内側</label>
-          <label title="板全体を白にする"><input type="radio" name="white" value="full" data-k><span class="ms">crop_square</span>板全体</label>
-          <label title="白版なし。色が透け、裏から絵が見える"><input type="radio" name="white" value="none" data-k><span class="ms">block</span>なし</label>
+          <label data-tip="白版：絵柄どおり"><input type="radio" name="white" value="match" data-k checked><span class="ms">brush</span></label>
+          <label data-tip="白版：少し内側（ふちのはみ出し防止）"><input type="radio" name="white" value="choke" data-k><span class="ms">zoom_in_map</span></label>
+          <label data-tip="白版：板全体（ベタ白）"><input type="radio" name="white" value="full" data-k><span class="ms">crop_square</span></label>
+          <label data-tip="白版なし（色が透ける）"><input type="radio" name="white" value="none" data-k><span class="ms">block</span></label>
         </div>
-        <p class="hint"><span class="ms">info</span>絵は板の裏に印刷し、その後ろに白インクを重ねます。「分解」ボタンで構造が見られます。</p>
       </div>
     </details>
 
     <details>
-      <summary><span class="ms lead">auto_awesome</span>アクリルの質感<span class="val" id="sumLook"></span><span class="ms chev">expand_more</span></summary>
+      <summary data-tip="アクリルの質感"><span class="ms lead">auto_awesome</span><span class="val" id="sumLook"></span><span class="ms chev">expand_more</span></summary>
       <div class="body">
-        <div class="row"><span class="ms">blur_on</span><label for="gloss">すりガラス感</label><input type="range" id="gloss" data-k min="0" max="100" value="4"><output data-for="gloss"></output></div>
-        <div class="row"><span class="ms">water_drop</span><label for="tint">ふちの色味</label><input type="range" id="tint" data-k min="0" max="100" value="45"><output data-for="tint"></output></div>
-        <div class="row"><span class="ms">looks</span><label for="rainbow">光の虹色</label><input type="range" id="rainbow" data-k min="0" max="100" value="30"><output data-for="rainbow"></output></div>
-        <p class="hint"><span class="ms">info</span>本物のアクリルは断面がうっすら緑がかり、光が当たると虹色が出ます。</p>
+        <div class="row" data-tip="すりガラス感（0でピカピカ）"><span class="ms">blur_on</span><input type="range" id="gloss" data-k min="0" max="100" value="4" aria-label="すりガラス感"><output data-for="gloss"></output></div>
+        <div class="row" data-tip="ふちの色味（断面のうっすら緑）"><span class="ms">water_drop</span><input type="range" id="tint" data-k min="0" max="100" value="45" aria-label="ふちの色味"><output data-for="tint"></output></div>
+        <div class="row" data-tip="光の虹色"><span class="ms">looks</span><input type="range" id="rainbow" data-k min="0" max="100" value="30" aria-label="光の虹色"><output data-for="rainbow"></output></div>
       </div>
     </details>
 
     <details>
-      <summary><span class="ms lead">foundation</span>台座<span class="val" id="sumBase"></span><span class="ms chev">expand_more</span></summary>
+      <summary data-tip="台座"><span class="ms lead">foundation</span><span class="val" id="sumBase"></span><span class="ms chev">expand_more</span></summary>
       <div class="body">
         <div class="seg" role="radiogroup" aria-label="台座の形">
-          <label><input type="radio" name="base" value="ellipse" data-k checked><svg viewBox="0 0 26 22"><ellipse cx="13" cy="11" rx="11" ry="7"/></svg>だ円</label>
-          <label><input type="radio" name="base" value="round" data-k><svg viewBox="0 0 26 22"><rect x="2" y="4" width="22" height="14" rx="4"/></svg>角丸</label>
-          <label><input type="radio" name="base" value="circle" data-k><svg viewBox="0 0 26 22"><circle cx="13" cy="11" r="9"/></svg>まる</label>
-          <label><input type="radio" name="base" value="none" data-k><span class="ms">block</span>なし</label>
+          <label data-tip="だ円"><input type="radio" name="base" value="ellipse" data-k checked><svg viewBox="0 0 26 22"><ellipse cx="13" cy="11" rx="11" ry="7"/></svg></label>
+          <label data-tip="角丸"><input type="radio" name="base" value="round" data-k><svg viewBox="0 0 26 22"><rect x="2" y="4" width="22" height="14" rx="4"/></svg></label>
+          <label data-tip="まる"><input type="radio" name="base" value="circle" data-k><svg viewBox="0 0 26 22"><circle cx="13" cy="11" r="9"/></svg></label>
+          <label data-tip="台座なし"><input type="radio" name="base" value="none" data-k><span class="ms">block</span></label>
         </div>
-        <div class="lbl"><span class="ms">palette</span>台座の色</div>
         <div class="seg" role="radiogroup" aria-label="台座の色">
-          <label><input type="radio" name="baseMat" value="clear" data-k checked><span class="sw" style="background:linear-gradient(135deg,#ffffff,#d8efe8)"></span>クリア</label>
-          <label><input type="radio" name="baseMat" value="white" data-k><span class="sw" style="background:#f4f4f2"></span>ホワイト</label>
-          <label><input type="radio" name="baseMat" value="black" data-k><span class="sw" style="background:#111"></span>ブラック</label>
+          <label data-tip="クリア"><input type="radio" name="baseMat" value="clear" data-k checked><span class="sw" style="background:linear-gradient(135deg,#ffffff,#d8efe8)"></span></label>
+          <label data-tip="ホワイト"><input type="radio" name="baseMat" value="white" data-k><span class="sw" style="background:#f4f4f2"></span></label>
+          <label data-tip="ブラック"><input type="radio" name="baseMat" value="black" data-k><span class="sw" style="background:#111"></span></label>
         </div>
-        <div class="row"><span class="ms">aspect_ratio</span><label for="baseSize">大きさ</label><input type="range" id="baseSize" data-k min="50" max="150" value="85" data-unit="%"><output data-for="baseSize"></output></div>
-        <div class="row"><span class="ms">vertical_align_bottom</span><label for="baseT">厚み</label><input type="range" id="baseT" data-k min="2" max="10" value="5" data-unit="mm"><output data-for="baseT"></output></div>
-        <div class="row"><span class="ms">width</span><label for="tabW">差し込み幅</label><input type="range" id="tabW" data-k min="8" max="60" value="20" data-unit="mm"><output data-for="tabW"></output></div>
-        <div class="row"><span class="ms">swap_horiz</span><label for="tabX">差し込み位置</label><input type="range" id="tabX" data-k min="-40" max="40" value="0" data-unit="mm"><output data-for="tabX"></output></div>
+        <div class="row" data-tip="台座の大きさ"><span class="ms">aspect_ratio</span><input type="range" id="baseSize" data-k min="50" max="150" value="85" data-unit="%" aria-label="台座の大きさ"><output data-for="baseSize"></output></div>
+        <div class="row" data-tip="台座の厚み"><span class="ms">vertical_align_bottom</span><input type="range" id="baseT" data-k min="2" max="10" value="5" data-unit="mm" aria-label="台座の厚み"><output data-for="baseT"></output></div>
+        <div class="row" data-tip="差し込みの幅"><span class="ms">width</span><input type="range" id="tabW" data-k min="8" max="60" value="20" data-unit="mm" aria-label="差し込みの幅"><output data-for="tabW"></output></div>
+        <div class="row" data-tip="差し込みの位置（左右）"><span class="ms">swap_horiz</span><input type="range" id="tabX" data-k min="-40" max="40" value="0" data-unit="mm" aria-label="差し込みの位置"><output data-for="tabX"></output></div>
       </div>
     </details>
 
-    <details open>
-      <summary><span class="ms lead">download</span>書き出し<span class="ms chev">expand_more</span></summary>
-      <div class="body">
-        <div class="exp">
-          <button class="btn acc" id="expGlb"><span class="ms">view_in_ar</span>3Dデータ（GLB）<small>zip入り</small></button>
-          <button class="btn ghost" id="expKit"><span class="ms">inventory_2</span>入稿用データ一式<small>印刷・白版・カット</small></button>
-          <button class="btn ghost" id="expPng"><span class="ms">photo_camera</span>いまの見た目を画像で<small>PNG</small></button>
-        </div>
-        <p class="hint"><span class="ms">info</span>GLBはzipに入れて渡します。解凍すると .glb が出てきます。</p>
-      </div>
-    </details>
+    <div class="exp">
+      <button class="btn acc" id="expGlb" data-tip="3Dデータ（GLB）を保存・zip入り"><span class="ms">view_in_ar</span>GLB</button>
+      <button class="btn ghost" id="expKit" data-tip="入稿用データ一式（印刷・白版・カットパス）"><span class="ms">inventory_2</span></button>
+      <button class="btn ghost" id="expPng" data-tip="いまの見た目をPNGで保存"><span class="ms">photo_camera</span></button>
+    </div>
     <p id="msg" role="status"></p>
   </aside>
 </div>
+<div id="tip" role="tooltip"></div>
 
 <script type="module">
 import * as THREE from 'three';
@@ -295,7 +299,7 @@ function prepareArt(img,p){
     while(qh<qt){const i=q[qh++],X=i%w,Y=(i/w)|0;if(X>0)push(i-1);if(X<w-1)push(i+1);if(Y>0)push(i-w);if(Y<h-1)push(i+w)}
     for(let i=0;i<w*h;i++)if(vis[i])d[i*4+3]=0;x.putImageData(id,0,0)}
   let x0=w,y0=h,x1=-1,y1=-1;for(let Y=0;Y<h;Y++)for(let X=0;X<w;X++)if(d[(Y*w+X)*4+3]>20){if(X<x0)x0=X;if(X>x1)x1=X;if(Y<y0)y0=Y;if(Y>y1)y1=Y}
-  if(x1<0)throw new Error('絵が見つかりませんでした（全部透明になっています）。「消す強さ」を下げてみてください。');
+  if(x1<0)throw new Error('絵が見つかりません。「消す強さ」を下げてください');
   const pd=4;x0=Math.max(0,x0-pd);y0=Math.max(0,y0-pd);x1=Math.min(w-1,x1+pd);y1=Math.min(h-1,y1+pd);
   const o=mk(x1-x0+1,y1-y0+1);o.getContext('2d').drawImage(c,x0,y0,o.width,o.height,0,0,o.width,o.height);
   return {canvas:o,hasAlpha}}
@@ -361,7 +365,7 @@ let firstFit=true,texCache=null;
 function clearStand(){stand.traverse(o=>{if(o.isMesh){o.geometry.dispose();if(o.material.map&&o.material.map!==texCache)o.material.map.dispose();if(!/acrylic|base_/.test(o.material.name))o.material.dispose()}});stand.clear()}
 function build(){
   if(!st.art)return;const p=P();applyLook();
-  let o;try{o=buildOutline(p)}catch(e){msg('形の計算でつまずきました。余白やなめらかさを変えてみてください。',true);return}
+  let o;try{o=buildOutline(p)}catch(e){msg('形を作れませんでした。余白を変えてみてください',true);return}
   clearStand();
   const shape=new THREE.Shape(o.pts),bv=Math.min(0.35,p.t*0.12);
   const g=new THREE.ExtrudeGeometry(shape,{depth:p.t-2*bv,bevelEnabled:true,bevelThickness:bv,bevelSize:bv,bevelOffset:-bv,bevelSegments:3,curveSegments:1});
@@ -393,7 +397,7 @@ function build(){
   st.model={o,pw,ph,bw,bd,p};
   $('sizeInfo').textContent=`板 ${pw.toFixed(1)} × ${ph.toFixed(1)} mm`;
   $('thickInfo').textContent=p.base==='none'?`厚み ${p.t}mm・台座なし`:`厚み ${p.t}mm・台座 ${bw.toFixed(0)}×${bd.toFixed(0)}mm`;
-  if(o.pieces>1)msg(`離れたパーツが${o.pieces-1}個あり、いちばん大きい形だけ使っています。「カット余白」を増やすとつながります。`,true);else if($('msg').className==='warn')msg('');
+  if(o.pieces>1)msg(`離れたパーツ${o.pieces-1}個を除外中（余白を増やすとつながります）`,true);else if($('msg').className==='warn')msg('');
   for(const m of [st.pm,st.wm,st.baseMesh])if(m)m.userData.p0=m.position.clone();setExplode(ex.v);drawPreview(o);summaries(p,pw,ph);
   if(firstFit){fit('side');firstFit=false}}
 function fit(mode){if(!st.model)return;const {ph,pw,bd}=st.model,vt=Math.tan(THREE.MathUtils.degToRad(camera.fov/2)),ht=vt*camera.aspect,dist=Math.max((ph+12)/(2*vt),(Math.max(pw,bd||0)+12)/(2*ht))*1.35,ty=ph*0.48;
@@ -413,7 +417,7 @@ const press=(id,on)=>$(id).setAttribute('aria-pressed',on);
 $('vFront').onclick=()=>fit('front');$('vSide').onclick=()=>fit('side');$('vBack').onclick=()=>fit('back');
 $('vSpin').onclick=()=>{controls.autoRotate=!controls.autoRotate;press('vSpin',controls.autoRotate)};
 $('vExplode').onclick=()=>{ex.target=ex.target?0:1;press('vExplode',!!ex.target);$('stage').classList.toggle('exploded',!!ex.target);if(ex.target&&controls.autoRotate){controls.autoRotate=false;press('vSpin',false)}if(ex.target)fit('side')};
-$('vGrid').onclick=()=>{grid.visible=!grid.visible;press('vGrid',grid.visible);if(grid.visible)msg('方眼は1マス10mmです。')};
+$('vGrid').onclick=()=>{grid.visible=!grid.visible;press('vGrid',grid.visible);if(grid.visible)msg('1マス＝10mm')};
 controls.addEventListener('start',()=>{for(const id of ['vFront','vSide','vBack'])press(id,false)});
 
 /* ---------- 2D preview & summaries ---------- */
@@ -438,16 +442,16 @@ const sameSrc=(a,b)=>a.bg===b.bg&&a.tol===b.tol;
 function commit(){const s=snap(),cur=hist.list[hist.i];if(JSON.stringify(s)===JSON.stringify(cur))return;hist.list=hist.list.slice(0,hist.i+1);hist.list.push(s);if(hist.list.length>60)hist.list.shift();hist.i=hist.list.length-1;navBtns();markPreset()}
 function navBtns(){$('undo').disabled=hist.i<=0;$('redo').disabled=hist.i>=hist.list.length-1}
 function restore(s){const prev=snap();apply(s);markPreset();applyLook();if(!sameSrc(prev,s)&&st.src)loadImage(st.src,false);else build()}
-$('undo').onclick=()=>{if(hist.i>0){hist.i--;restore(hist.list[hist.i]);navBtns();msg('ひとつ前に戻しました。')}};
+$('undo').onclick=()=>{if(hist.i>0){hist.i--;restore(hist.list[hist.i]);navBtns()}};
 $('redo').onclick=()=>{if(hist.i<hist.list.length-1){hist.i++;restore(hist.list[hist.i]);navBtns()}};
-$('reset').onclick=()=>{restore(DEFAULT);commit();msg('設定を最初の状態に戻しました。')};
+$('reset').onclick=()=>{restore(DEFAULT);commit();msg('リセットしました')};
 addEventListener('keydown',e=>{if(!(e.metaKey||e.ctrlKey)||e.key.toLowerCase()!=='z'||e.target.matches('input[type=text],textarea'))return;e.preventDefault();(e.shiftKey?$('redo'):$('undo')).click()});
 const PRESETS={std:{h:100,t:3,margin:2.5,base:'ellipse',baseT:5,tabW:20,baseSize:85,gloss:4},
   mini:{h:50,t:3,margin:2,base:'ellipse',baseT:3,tabW:12,baseSize:90,gloss:4},
   lux:{h:120,t:5,margin:3,base:'round',baseT:8,tabW:26,baseSize:80,gloss:0,rainbow:45},
   big:{h:180,t:5,margin:3.5,base:'round',baseT:8,tabW:36,baseSize:75,gloss:4}};
 function markPreset(){const s=snap();for(const b of document.querySelectorAll('.pre')){const p=PRESETS[b.dataset.pre];b.setAttribute('aria-pressed',Object.keys(p).every(k=>String(s[k])===String(p[k])))}}
-for(const b of document.querySelectorAll('.pre'))b.onclick=()=>{apply(PRESETS[b.dataset.pre]);applyLook();build();commit();msg(`プリセット「${b.textContent.replace(/^\S+/,'').trim()}」にしました。`)};
+for(const b of document.querySelectorAll('.pre'))b.onclick=()=>{apply(PRESETS[b.dataset.pre]);applyLook();build();commit();msg(b.dataset.tip)};
 
 /* ---------- control events ---------- */
 let timer=0;const later=()=>{clearTimeout(timer);timer=setTimeout(build,90)};
@@ -457,15 +461,25 @@ $('panel').addEventListener('input',e=>{const i=e.target;if(!i.matches('[data-k]
 $('panel').addEventListener('change',e=>{const i=e.target;if(!i.matches('[data-k]'))return;
   if((i.id==='bg'||i.id==='tol')&&st.src)loadImage(st.src,false);commit()});
 
+
+/* ---------- tooltips ---------- */
+{const tip=$('tip');let cur=null,tt=0;
+ const show=el=>{cur=el;tip.textContent=el.dataset.tip;tip.classList.add('on');const r=el.getBoundingClientRect(),w=tip.offsetWidth,h=tip.offsetHeight;
+   let x=r.left+r.width/2-w/2,y=r.top-h-8;if(y<6)y=r.bottom+8;x=Math.max(6,Math.min(innerWidth-w-6,x));tip.style.left=x+'px';tip.style.top=y+'px'};
+ const hide=()=>{cur=null;tip.classList.remove('on')};
+ document.addEventListener('pointerover',e=>{const el=e.target.closest('[data-tip]');if(el&&el!==cur&&e.pointerType!=='touch')show(el);else if(!el&&cur)hide()});
+ document.addEventListener('pointerdown',e=>{const el=e.target.closest('[data-tip]');if(e.pointerType==='touch'&&el){show(el);clearTimeout(tt);tt=setTimeout(hide,1400)}});
+ document.addEventListener('focusin',e=>{const el=e.target.closest('[data-tip]');if(el&&e.target.matches(':focus-visible'))show(el)});
+ document.addEventListener('focusout',hide);addEventListener('scroll',hide,true)}
 /* ---------- loading images ---------- */
 const stage=$('stage');
 function loadImage(img,isNew){stage.classList.add('loading');
   setTimeout(()=>{try{const r=prepareArt(img,P());st.art=r.canvas;st.src=img;if(texCache){texCache.dispose();texCache=null}
-    if(isNew){firstFit=true;$('sampleNote').textContent='読み込んだ画像で作っています。左の小窓が切り抜き結果（マゼンタ線がカット位置）です。'}
-    build();msg(r.hasAlpha?'透明背景を検出したので、そのまま切り抜きました。':(P().bg?'背景色を自動で消しました。残りがあれば「消す強さ」で調整できます。':'背景を消さずに使っています。'))}
+    if(isNew)firstFit=true;
+    build();msg(r.hasAlpha?'透明背景をそのまま使用':(P().bg?'背景を自動で消しました':'背景はそのまま'))}
     catch(e){msg(e.message,true)}finally{stage.classList.remove('loading')}},30)}
-function readFile(f){if(!f||!f.type.startsWith('image/')){msg('画像ファイルを選んでください。',true);return}
-  const url=URL.createObjectURL(f),img=new Image();img.onload=()=>{st.fileName=f.name.replace(/\.[^.]+$/,'');loadImage(img,true)};img.onerror=()=>msg('この画像は読み込めませんでした。PNGかJPGで試してください。',true);img.src=url}
+function readFile(f){if(!f||!f.type.startsWith('image/')){msg('画像ファイルを選んでください',true);return}
+  const url=URL.createObjectURL(f),img=new Image();img.onload=()=>{st.fileName=f.name.replace(/\.[^.]+$/,'');loadImage(img,true)};img.onerror=()=>msg('読み込めませんでした（PNG/JPG推奨）',true);img.src=url}
 $('file').addEventListener('change',e=>{readFile(e.target.files[0]);e.target.value=''});
 stage.addEventListener('dragover',e=>{e.preventDefault();stage.classList.add('over')});
 stage.addEventListener('dragleave',e=>{if(!stage.contains(e.relatedTarget))stage.classList.remove('over')});
