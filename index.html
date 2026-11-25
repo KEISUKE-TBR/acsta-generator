@@ -261,7 +261,7 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
 
     <div class="tabp" id="tab-exp" role="tabpanel" aria-labelledby="t-exp" hidden>
       <div class="exp2">
-        <button class="xb acc" id="expGlb" data-tip="3Dデータ（GLB）を保存・zip入り"><span class="ms">view_in_ar</span><b>GLB</b></button>
+        <button class="xb acc" id="expGlb" data-tip="3Dデータ（GLB）を保存・リアル版と互換版の2種入り"><span class="ms">view_in_ar</span><b>GLB</b></button>
         <button class="xb" id="expKit" data-tip="入稿用データ一式（印刷・白版・カットパス）"><span class="ms">inventory_2</span><b>入稿</b></button>
         <button class="xb" id="expPng" data-tip="いまの見た目をPNGで保存"><span class="ms">photo_camera</span><b>PNG</b></button>
       </div>
@@ -614,8 +614,11 @@ async function save(name,blob){const dl=await dlReady;
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();msg(`「${name}」を保存しました。`)}
 const base=()=>st.fileName||'acrylic_stand';
 const canvasBlob=c=>new Promise(r=>c.toBlob(r,'image/png'));
-async function glbBytes(){const e0=ex.v;setExplode(0);try{return await glbRaw()}finally{setExplode(e0)}}
-async function glbRaw(){const root=new THREE.Group();root.name='acrylic_stand';root.scale.setScalar(0.001);root.add(stand.clone(true));
+async function glbBytes(simple){const e0=ex.v;setExplode(0);try{return await glbRaw(simple)}finally{setExplode(e0)}}
+/* simple=true：透過（transmission）に対応していないビューア向け。アクリルを半透明（アルファ）で表現 */
+const simpleAcrylic=new THREE.MeshStandardMaterial({name:'acrylic_simple',color:0xeef8f4,transparent:true,opacity:0.28,roughness:0.05,metalness:0});
+async function glbRaw(simple){const root=new THREE.Group();root.name='acrylic_stand';root.scale.setScalar(0.001);const cl=stand.clone(true);root.add(cl);
+  if(simple)cl.traverse(o=>{if(o.isMesh&&(o.material===acrylic||o.material===baseClear))o.material=simpleAcrylic});
   const mats=[acrylic,baseClear],keep=mats.map(m=>m.attenuationDistance);mats.forEach(m=>m.attenuationDistance*=0.001);
   try{const buf=await new GLTFExporter().parseAsync(root,{binary:true});return new Uint8Array(buf)}finally{mats.forEach((m,i)=>m.attenuationDistance=keep[i])}}
 function cutSVG(){const {o,p}=st.model,pts=o.pts,b=new THREE.Box2().setFromPoints(pts),m=3;let minX=b.min.x,maxX=b.max.x,maxY=b.max.y,minY=b.min.y;
@@ -630,7 +633,7 @@ function cutSVG(){const {o,p}=st.model,pts=o.pts,b=new THREE.Box2().setFromPoint
 <g id="art_area" fill="none" stroke="#00a0e9" stroke-width="0.1" stroke-dasharray="1 1"><rect x="${f(artL)}" y="${f(artT)}" width="${f(o.artW)}" height="${f(o.artH)}"/></g>
 <g id="cut_line" fill="none" stroke="#e6007e" stroke-width="0.1"><path d="${P1}"/>${bs?`<path d="${path(bs)}"/><path d="${path(bh)}"/>`:''}</g>
 </svg>`,plate:P1,W,H}}
-$('expGlb').onclick=async()=>{if(!st.model)return;msg('3Dデータを作っています…');try{const g=await glbBytes();await save(base()+'_glb.zip',zip([{name:base()+'.glb',data:g}]))}catch(e){msg('GLBの書き出しに失敗しました。',true)}};
+$('expGlb').onclick=async()=>{if(!st.model)return;msg('3Dデータを作っています…');try{const g=await glbBytes(false),g2=await glbBytes(true),enc=new TextEncoder();await save(base()+'_glb.zip',zip([{name:'acrylic_stand.glb',data:g},{name:'acrylic_stand_simple.glb',data:g2},{name:'README.txt',data:enc.encode('acrylic_stand.glb … リアル版。アクリルの透過・屈折・厚み（KHR_materials_transmission / volume / ior）入り。Blender、three.js、model-viewer、Sketchfab などで透明に見えます。\nacrylic_stand_simple.glb … 互換版。透過に対応していないビューア向けに、アクリルを半透明（アルファ）で表現しています。\n単位はメートル（実寸）。')}]))}catch(e){msg('GLBの書き出しに失敗しました。',true)}};
 $('expPng').onclick=async()=>{renderer.render(scene,camera);await save(base()+'_preview.png',await canvasBlob(renderer.domElement))};
 $('expKit').onclick=async()=>{if(!st.model)return;msg('入稿用データをまとめています…');const p=st.model.p,enc=new TextEncoder(),files=[];
   const toU8=async b=>new Uint8Array(await b.arrayBuffer());
