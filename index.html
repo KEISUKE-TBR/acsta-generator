@@ -132,6 +132,8 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
 @media(max-width:600px){.vb{min-width:52px;padding:6px 4px 4px}.chip{display:none}.legend{bottom:80px}}
 @media(prefers-reduced-motion:reduce){.busy .ms{animation:none}}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/1.0.11/pako.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/upng-js/2.1.0/UPNG.min.js"></script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 </head>
 <body>
@@ -269,6 +271,14 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
         <label data-tip="Unity Built-In・透過非対応のアプリ（半透明で表現）"><input type="radio" name="glbTarget" value="birp"><span class="ms">devices</span><small>その他</small></label>
         <label data-tip="全部まとめてzipに"><input type="radio" name="glbTarget" value="all"><span class="ms">select_all</span><small>全部</small></label>
       </div>
+      <div class="lbl"><span class="ms">photo_size_select_large</span>画像の解像度（GLB）</div>
+      <div class="seg tg" role="radiogroup" aria-label="画像の解像度">
+        <label data-tip="元のまま（最大4096px）"><input type="radio" name="texRes" value="0" checked><span class="ms">hd</span><small>元</small></label>
+        <label data-tip="最大2048px（スマホ・Web向け）"><input type="radio" name="texRes" value="2048">2048</label>
+        <label data-tip="最大1024px（軽量）"><input type="radio" name="texRes" value="1024">1024</label>
+        <label data-tip="最大512px（とても軽い）"><input type="radio" name="texRes" value="512">512</label>
+      </div>
+      <label class="check" data-tip="PNGを256色に減色して軽くする（イラスト向け・見た目ほぼ同じ）"><span class="ms">compress</span><input type="checkbox" id="quant" aria-label="PNGを減色して軽くする"><span class="switch"></span></label>
       <div class="exp2">
         <button class="xb acc" id="expGlb" data-tip="3Dデータ（GLB）を保存（上で選んだ書き出し先向け・zip）"><span class="ms">view_in_ar</span><b>GLB</b></button>
         <button class="xb" id="expKit" data-tip="入稿用データ一式（印刷・白版・カットパス）"><span class="ms">inventory_2</span><b>入稿</b></button>
@@ -433,7 +443,9 @@ function baseOutline(p,bw){
   const pts=contour(m,W,H,p.smooth).map(([x,y])=>new THREE.Vector2((x-cx0)/ppm,(cy0-y)/ppm));
   return {pts,artW,artH:gh/ppm,inside:inside&&pieces<=1}}
 
-function whiteFor(art,pxPerMM,mode){const w=art.width,h=art.height,a=art.getContext('2d',{willReadFrequently:true}).getImageData(0,0,w,h).data;
+const whiteCache=new WeakMap();
+function whiteFor(art,pxPerMM,mode){const key=mode+'|'+pxPerMM.toFixed(3);let mm=whiteCache.get(art);if(!mm){mm=new Map();whiteCache.set(art,mm)}if(mm.has(key))return mm.get(key);const out=whiteRaw(art,pxPerMM,mode);mm.set(key,out);return out}
+function whiteRaw(art,pxPerMM,mode){const w=art.width,h=art.height,a=art.getContext('2d',{willReadFrequently:true}).getImageData(0,0,w,h).data;
   const fg=new Uint8Array(w*h);for(let i=0;i<w*h;i++)fg[i]=a[i*4+3]>128?1:0;let keep=fg;
   if(mode==='choke'){const inv=new Uint8Array(w*h);for(let i=0;i<w*h;i++)inv[i]=1-fg[i];const d=chamfer(inv,w,h),r=0.2*pxPerMM;keep=new Uint8Array(w*h);for(let i=0;i<w*h;i++)keep[i]=fg[i]&&d[i]>r?1:0}
   const c=mk(w,h),x=c.getContext('2d'),id=x.createImageData(w,h);for(let i=0;i<w*h;i++){id.data[i*4]=id.data[i*4+1]=id.data[i*4+2]=255;id.data[i*4+3]=keep[i]?255:0}
@@ -567,6 +579,27 @@ $('panel').addEventListener('change',e=>{const i=e.target;if(!i.matches('[data-k
  document.addEventListener('focusout',hide);addEventListener('scroll',hide,true)}
 
 
+
+/* ---------- 画像の圧縮（解像度の上限＋PNG減色） ---------- */
+const texOpts=()=>({cap:+rv('texRes'),quant:$('quant').checked&&!!window.UPNG});
+const scaledCache=new WeakMap();
+function scaled(c,cap){if(!cap||Math.max(c.width,c.height)<=cap)return c;let m=scaledCache.get(c);if(!m){m=new Map();scaledCache.set(c,m)}
+  if(!m.has(cap)){const k=cap/Math.max(c.width,c.height);m.set(cap,stepDown(c,Math.round(c.width*k),Math.round(c.height*k)))}return m.get(cap)}
+const quantCache=new WeakMap();
+function quantBytes(c){if(quantCache.has(c))return quantCache.get(c);const d=c.getContext('2d',{willReadFrequently:true}).getImageData(0,0,c.width,c.height).data;
+  const out=new Uint8Array(UPNG.encode([d.buffer.slice(0)],c.width,c.height,256));quantCache.set(c,out);return out}
+function quantizeGLB(u8){const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength),jl=dv.getUint32(12,true),json=JSON.parse(new TextDecoder().decode(u8.subarray(20,20+jl)));
+  const binStart=20+jl+8,bin=u8.subarray(binStart,binStart+dv.getUint32(20+jl,true)),imgView=new Map();
+  for(const im of json.images||[])if(im.bufferView!=null&&im.mimeType==='image/png')imgView.set(im.bufferView,true);
+  const parts=[];let off=0;
+  json.bufferViews.forEach((bv,i)=>{let data=bin.subarray(bv.byteOffset||0,(bv.byteOffset||0)+bv.byteLength);
+    if(imgView.has(i)){try{const img=UPNG.decode(data.slice().buffer),rgba=UPNG.toRGBA8(img)[0];const q=new Uint8Array(UPNG.encode([rgba],img.width,img.height,256));if(q.length<data.length)data=q}catch(e){}}
+    const pad=(4-off%4)%4;if(pad){parts.push(new Uint8Array(pad));off+=pad}bv.byteOffset=off;bv.byteLength=data.length;parts.push(data);off+=data.length});
+  const padB=(4-off%4)%4;if(padB){parts.push(new Uint8Array(padB));off+=padB}json.buffers[0].byteLength=off;
+  let js=new TextEncoder().encode(JSON.stringify(json));const pj=(4-js.length%4)%4;if(pj){const t=new Uint8Array(js.length+pj).fill(0x20);t.set(js);js=t}
+  const total=12+8+js.length+8+off,out=new Uint8Array(total),o=new DataView(out.buffer);
+  o.setUint32(0,0x46546C67,true);o.setUint32(4,2,true);o.setUint32(8,total,true);o.setUint32(12,js.length,true);o.setUint32(16,0x4E4F534A,true);out.set(js,20);
+  let p=20+js.length;o.setUint32(p,off,true);o.setUint32(p+4,0x004E4942,true);p+=8;for(const x of parts){out.set(x,p);p+=x.length}return out}
 /* ---------- GLBサイズの見積もり（形状データ＋PNG化した画像の実サイズから計算） ---------- */
 const pngBytes=new WeakMap();
 const pngSize=c=>pngBytes.has(c)?Promise.resolve(pngBytes.get(c)):new Promise(r=>c.toBlob(b=>{const n=b?b.size:0;pngBytes.set(c,n);r(n)},'image/png'));
@@ -576,8 +609,10 @@ function showSize(){if(st.sizeOne==null)return;const all=rv('glbTarget')==='all'
 function estimateSize(){clearTimeout(sizeTimer);sizeTimer=setTimeout(async()=>{const seq=++sizeSeq;let geo=0;const imgs=new Set();
   stand.traverse(o=>{if(!o.isMesh)return;const g=o.geometry;for(const k in g.attributes){const at=g.attributes[k];geo+=at.count*at.itemSize*4}
     if(g.index)geo+=g.index.count*g.index.array.BYTES_PER_ELEMENT;const m=o.material;if(m&&m.map&&m.map.image)imgs.add(m.map.image)});
-  let tex=0;for(const c of imgs)tex+=await pngSize(c);if(seq!==sizeSeq)return;st.sizeOne=geo+tex+6000;showSize()},350)}
+  const o=texOpts();let tex=0;for(const c0 of imgs){const c=scaled(c0,o.cap);tex+=o.quant?Math.min(quantBytes(c).length,await pngSize(c)):await pngSize(c)}if(seq!==sizeSeq)return;st.sizeOne=geo+tex+6000;showSize()},350)}
 for(const r of document.querySelectorAll('input[name=glbTarget]'))r.addEventListener('change',showSize);
+if(!window.UPNG){$('quant').disabled=true;$('quant').closest('label').dataset.tip='減色圧縮は読み込めませんでした'}
+for(const r of document.querySelectorAll('input[name=texRes],#quant'))r.addEventListener('change',()=>{$('fileSize').textContent='計算中…';estimateSize()});
 /* ---------- tabs ---------- */
 for(const t of document.querySelectorAll('.tab'))t.onclick=()=>{for(const u of document.querySelectorAll('.tab')){const on=u===t;u.setAttribute('aria-selected',on);$(u.getAttribute('aria-controls')).hidden=!on}};
 document.querySelector('.tabs').addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;const ts=[...document.querySelectorAll('.tab')],i=ts.indexOf(document.activeElement);if(i<0)return;const n=ts[(i+(e.key==='ArrowRight'?1:ts.length-1))%ts.length];n.focus();n.click()});
@@ -635,10 +670,12 @@ async function save(name,blob){const dl=await dlReady;
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();msg(`「${name}」を保存しました。`)}
 const base=()=>st.fileName||'acrylic_stand';
 const canvasBlob=c=>new Promise(r=>c.toBlob(r,'image/png'));
-async function glbBytes(simple){const e0=ex.v;setExplode(0);try{return await glbRaw(simple)}finally{setExplode(e0)}}
+async function glbBytes(simple){const e0=ex.v;setExplode(0);try{const o=texOpts();let g=await glbRaw(simple,o.cap);if(o.quant&&window.UPNG)g=quantizeGLB(g);return g}finally{setExplode(e0)}}
 /* simple=true：透過（transmission）に対応していないビューア向け。アクリルを半透明（アルファ）で表現 */
 const simpleAcrylic=new THREE.MeshStandardMaterial({name:'acrylic_simple',color:0xeef8f4,transparent:true,opacity:0.28,roughness:0.05,metalness:0});
-async function glbRaw(simple){const root=new THREE.Group();root.name='acrylic_stand';root.scale.setScalar(0.001);const cl=stand.clone(true);root.add(cl);
+async function glbRaw(simple,cap){const root=new THREE.Group();root.name='acrylic_stand';root.scale.setScalar(0.001);const cl=stand.clone(true);root.add(cl);
+  if(cap){const texFor=new Map();cl.traverse(o=>{const m=o.material;if(!o.isMesh||!m||!m.map||!m.map.image)return;const src=m.map.image,sc=scaled(src,cap);if(sc===src)return;
+    if(!texFor.has(src)){const t=m.map.clone();t.image=sc;t.needsUpdate=true;texFor.set(src,t)}const nm=m.clone();nm.map=texFor.get(src);o.material=nm})}
   if(simple)cl.traverse(o=>{if(o.isMesh&&(o.material===acrylic||o.material===baseClear))o.material=simpleAcrylic});
   const mats=[acrylic,baseClear],keep=mats.map(m=>m.attenuationDistance);mats.forEach(m=>m.attenuationDistance*=0.001);
   try{const buf=await new GLTFExporter().parseAsync(root,{binary:true});return new Uint8Array(buf)}finally{mats.forEach((m,i)=>m.attenuationDistance=keep[i])}}
