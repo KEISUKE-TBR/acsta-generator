@@ -123,7 +123,7 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
 .bstack{display:grid;grid-template-rows:minmax(0,1fr) 44px;gap:6px;height:100%}.bstack .bigbtn{min-height:0}
 .bstack .ib{width:100%;background:var(--bg);border:1.5px solid var(--line)}
 .sec{border-top:1px solid var(--line);margin-top:14px;padding-top:6px}
-.seg.tg{margin-bottom:12px}.seg.tg label{font-size:13px}.seg.tg small{font-size:13px;font-weight:500}
+.seg.tg{margin-bottom:12px}#tbOpts{margin:-4px 0 10px;padding:10px;border-radius:13px;background:var(--accSoft)}#tbOpts .seg.tg{margin-bottom:4px}#tbOpts[hidden]{display:none}.seg.tg label{font-size:13px}.seg.tg small{font-size:13px;font-weight:500}
 .exp2{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .xb{display:grid;place-items:center;align-content:center;gap:6px;aspect-ratio:1;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
 .xb .ms{font-size:34px}.xb b{font-size:14px}.xb:hover{background:var(--field)}
@@ -155,6 +155,7 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
       <button class="ib" id="vSpin" aria-pressed="true" data-tip="自動回転"><span class="ms">autorenew</span></button>
       <button class="ib" id="vExplode" aria-pressed="false" data-tip="分解して構造を見る"><span class="ms">stacks</span></button>
       <button class="ib" id="vGrid" aria-pressed="false" data-tip="方眼（1マス10mm）"><span class="ms">grid_4x4</span></button>
+      <button class="ib" id="vApp" aria-pressed="false" data-tip="Tobiratoryアプリでの見え方の目安"><span class="ms">door_front</span></button>
     </div>
     <div class="drop"><span class="ms">add_photo_alternate</span></div>
     <div class="busy"><span class="ms">progress_activity</span></div>
@@ -265,11 +266,19 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
     <div class="tabp" id="tab-exp" role="tabpanel" aria-labelledby="t-exp" hidden>
       <div class="lbl"><span class="ms">view_in_ar</span>GLBの書き出し先</div>
       <div class="seg tg" role="radiogroup" aria-label="GLBの書き出し先">
+        <label data-tip="Tobiratoryアプリ向け（アプリのアクリル素材に自動で置き換わる）"><input type="radio" name="glbTarget" value="tobira"><span class="ms">door_front</span><small>Tobira</small></label>
         <label data-tip="Web・Blender・Sketchfab（リアルな透過・屈折）"><input type="radio" name="glbTarget" value="web" checked><span class="ms">public</span><small>Web</small></label>
         <label data-tip="Unity URP（UnityGLTFで読み込み）"><input type="radio" name="glbTarget" value="urp"><span class="ms">sports_esports</span><small>URP</small></label>
         <label data-tip="Unity HDRP（glTFastで読み込み）"><input type="radio" name="glbTarget" value="hdrp"><span class="ms">sports_esports</span><small>HDRP</small></label>
         <label data-tip="Unity Built-In・透過非対応のアプリ（半透明で表現）"><input type="radio" name="glbTarget" value="birp"><span class="ms">devices</span><small>その他</small></label>
         <label data-tip="全部まとめてzipに"><input type="radio" name="glbTarget" value="all"><span class="ms">select_all</span><small>全部</small></label>
+      </div>
+      <div id="tbOpts" hidden>
+        <div class="seg tg" role="radiogroup" aria-label="Tobiratory版のサイズ">
+          <label data-tip="実寸（メートル単位）"><input type="radio" name="tbScale" value="real"><span class="ms">straighten</span><small>実寸</small></label>
+          <label data-tip="絵の高さ＝3（image2modelのアクスタと同じ大きさ）"><input type="radio" name="tbScale" value="h3" checked><span class="ms">height</span><small>高さ3</small></label>
+        </div>
+        <label class="check" data-tip="ふち（断面）を別素材にしてアクスタらしく光らせる"><span class="ms">highlight</span><input type="checkbox" id="tbEdge" checked aria-label="ふちを光らせる"><span class="switch"></span></label>
       </div>
       <div class="lbl"><span class="ms">photo_size_select_large</span>画像の解像度（GLB）</div>
       <div class="seg tg" role="radiogroup" aria-label="画像の解像度">
@@ -504,7 +513,7 @@ function build(){
   if(o.pieces>1)msg(`離れたパーツ${o.pieces-1}個を除外中（余白を増やすとつながります）`,true);
   else if(warnSlot)msg('差し込み穴が台座の絵からはみ出しています。位置を調整してください',true);
   else if($('msg').className==='warn')msg('');
-  for(const m of [st.pm,st.wm,st.baseGroup])if(m)m.userData.p0=m.position.clone();setExplode(ex.v);drawPreview(o);drawBasePreview(p);summaries(p,pw,ph);estimateSize();
+  for(const m of [st.pm,st.wm,st.baseGroup])if(m)m.userData.p0=m.position.clone();setExplode(ex.v);drawPreview(o);drawBasePreview(p);summaries(p,pw,ph);estimateSize();if(st.appLook)applyAppLook();
   if(firstFit){fit('side');firstFit=false}}
 function fit(mode){if(!st.model)return;const {ph,pw,bd}=st.model,vt=Math.tan(THREE.MathUtils.degToRad(camera.fov/2)),ht=vt*camera.aspect,dist=Math.max((ph+12)/(2*vt),(Math.max(pw,bd||0)+12)/(2*ht))*1.35,ty=ph*0.48;
   const dir={front:[0,0.12,1],back:[0,0.12,-1],side:[0.62,0.32,0.9]}[mode];const v=new THREE.Vector3(...dir).normalize().multiplyScalar(dist);
@@ -605,14 +614,23 @@ const pngBytes=new WeakMap();
 const pngSize=c=>pngBytes.has(c)?Promise.resolve(pngBytes.get(c)):new Promise(r=>c.toBlob(b=>{const n=b?b.size:0;pngBytes.set(c,n);r(n)},'image/png'));
 let sizeTimer=0,sizeSeq=0;
 const fmtBytes=n=>n<1024*1024?`約 ${Math.max(1,Math.round(n/1024))} KB`:`約 ${(n/1024/1024).toFixed(1)} MB`;
-function showSize(){if(st.sizeOne==null)return;const all=rv('glbTarget')==='all';$('fileSize').textContent=fmtBytes(st.sizeOne*(all?4:1))+(all?'（全部）':'')}
-function estimateSize(){clearTimeout(sizeTimer);sizeTimer=setTimeout(async()=>{const seq=++sizeSeq;let geo=0;const imgs=new Set();
+function showSize(){if(st.sizeOne==null)return;const tg=rv('glbTarget'),all=tg==='all';$('fileSize').textContent=fmtBytes(st.sizeOne*(all?5:1))+(all?'（全部）':'')+(tg==='tobira'&&st.sizeOne>10*1024*1024?'・10MB超':'');$('tbOpts').hidden=tg!=='tobira'}
+function estimateSize(){clearTimeout(sizeTimer);sizeTimer=setTimeout(async()=>{const seq=++sizeSeq;let geo=0;const imgs=new Map();
   stand.traverse(o=>{if(!o.isMesh)return;const g=o.geometry;for(const k in g.attributes){const at=g.attributes[k];geo+=at.count*at.itemSize*4}
-    if(g.index)geo+=g.index.count*g.index.array.BYTES_PER_ELEMENT;const m=o.material;if(m&&m.map&&m.map.image)imgs.add(m.map.image)});
-  const o=texOpts();let tex=0;for(const c0 of imgs){const c=scaled(c0,o.cap);tex+=o.quant?Math.min(quantBytes(c).length,await pngSize(c)):await pngSize(c)}if(seq!==sizeSeq)return;st.sizeOne=geo+tex+6000;showSize()},350)}
-for(const r of document.querySelectorAll('input[name=glbTarget]'))r.addEventListener('change',showSize);
+    if(g.index)geo+=g.index.count*g.index.array.BYTES_PER_ELEMENT;const m=o.material;if(m&&m.map&&m.map.image)imgs.set(m.map.image,m.name)});
+  const o=texOpts(),tob=['tobira','all'].includes(rv('glbTarget'));let tex=0;for(const [c0,nm] of imgs){const c=scaled(c0,capFor(nm,o.cap,tob&&rv('glbTarget')==='tobira'));tex+=o.quant?Math.min(quantBytes(c).length,await pngSize(c)):await pngSize(c)}if(seq!==sizeSeq)return;st.sizeOne=geo+tex+6000;showSize()},350)}
+for(const r of document.querySelectorAll('input[name=glbTarget]'))r.addEventListener('change',()=>{showSize();$('fileSize').textContent='計算中…';estimateSize()});
 if(!window.UPNG){$('quant').disabled=true;$('quant').closest('label').dataset.tip='減色圧縮は読み込めませんでした'}
 for(const r of document.querySelectorAll('input[name=texRes],#quant'))r.addEventListener('change',()=>{$('fileSize').textContent='計算中…';estimateSize()});
+
+/* ---------- アプリ風プレビュー（Tobiratory書き出しと同じ素材で表示） ---------- */
+const origMat=new WeakMap();st.appLook=false;
+function applyAppLook(){stand.traverse(o=>{if(!o.isMesh)return;
+  if(st.appLook&&(o.material===acrylic||o.material===baseClear)){origMat.set(o,o.material);o.material=$('tbEdge').checked?[tobiraAcrylic,tobiraEdge]:tobiraAcrylic}
+  else if(!st.appLook&&origMat.has(o)){o.material=origMat.get(o);origMat.delete(o)}
+  else if(st.appLook&&origMat.has(o))o.material=$('tbEdge').checked?[tobiraAcrylic,tobiraEdge]:tobiraAcrylic})}
+$('vApp').onclick=()=>{st.appLook=!st.appLook;press('vApp',st.appLook);applyAppLook();msg(st.appLook?'アプリでの見え方の目安を表示中（実際の素材はアプリ側で決まります）':'')};
+$('tbEdge').addEventListener('change',applyAppLook);
 /* ---------- tabs ---------- */
 for(const t of document.querySelectorAll('.tab'))t.onclick=()=>{for(const u of document.querySelectorAll('.tab')){const on=u===t;u.setAttribute('aria-selected',on);$(u.getAttribute('aria-controls')).hidden=!on}};
 document.querySelector('.tabs').addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;const ts=[...document.querySelectorAll('.tab')],i=ts.indexOf(document.activeElement);if(i<0)return;const n=ts[(i+(e.key==='ArrowRight'?1:ts.length-1))%ts.length];n.focus();n.click()});
@@ -670,14 +688,27 @@ async function save(name,blob){const dl=await dlReady;
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();msg(`「${name}」を保存しました。`)}
 const base=()=>st.fileName||'acrylic_stand';
 const canvasBlob=c=>new Promise(r=>c.toBlob(r,'image/png'));
-async function glbBytes(simple){const e0=ex.v;setExplode(0);try{const o=texOpts();let g=await glbRaw(simple,o.cap);if(o.quant&&window.UPNG)g=quantizeGLB(g);return g}finally{setExplode(e0)}}
-/* simple=true：透過（transmission）に対応していないビューア向け。アクリルを半透明（アルファ）で表現 */
+async function glbBytes(mode){mode=mode===true?'simple':mode||'real';const e0=ex.v,al=st.appLook;setExplode(0);if(al){st.appLook=false;applyAppLook()}try{const o=texOpts();let g=await glbRaw(mode,o.cap);if(o.quant&&window.UPNG)g=quantizeGLB(g);if(mode==='tobira')g=patchGLBJson(g,tobiraJSON);return g}finally{setExplode(e0);if(al){st.appLook=true;applyAppLook()}}}
+/* simple：透過非対応ビューア向け。アクリルを半透明（アルファ）で表現 */
 const simpleAcrylic=new THREE.MeshStandardMaterial({name:'acrylic_simple',color:0xeef8f4,transparent:true,opacity:0.28,roughness:0.05,metalness:0});
-async function glbRaw(simple,cap){const root=new THREE.Group();root.name='acrylic_stand';root.scale.setScalar(0.001);const cl=stand.clone(true);root.add(cl);
-  if(cap){const texFor=new Map();cl.traverse(o=>{const m=o.material;if(!o.isMesh||!m||!m.map||!m.map.image)return;const src=m.map.image,sc=scaled(src,cap);if(sc===src)return;
-    if(!texFor.has(src)){const t=m.map.clone();t.image=sc;t.needsUpdate=true;texFor.set(src,t)}const nm=m.clone();nm.map=texFor.get(src);o.material=nm})}
-  if(simple)cl.traverse(o=>{if(o.isMesh&&(o.material===acrylic||o.material===baseClear))o.material=simpleAcrylic});
-  const mats=[acrylic,baseClear],keep=mats.map(m=>m.attenuationDistance);mats.forEach(m=>m.attenuationDistance*=0.001);
+/* tobira：Tobiratoryアプリ向け。名前の末尾 _TBR_PREMULTIPLY でアプリのアクリル素材に置き換わる。ふち（側面）は別素材で残す */
+const tobiraAcrylic=new THREE.MeshStandardMaterial({name:'acrylic_TBR_PREMULTIPLY',color:0xffffff,transparent:true,opacity:0.3,roughness:0.05,metalness:0});
+const tobiraEdge=new THREE.MeshStandardMaterial({name:'acrylic_edge',color:0xd9f0e8,roughness:0.12,metalness:0});
+/* 画像の上限：Tobiratoryは image2model に合わせて本体2048px・台座1024px */
+function capFor(name,cap,tob){let c=cap||0;if(tob){const lim=/^base_/.test(name||'')?1024:2048;c=c?Math.min(c,lim):lim}return c}
+function tobiraJSON(j){for(const n of j.nodes||[])delete n.extras;let used=false;for(const m of j.materials||[])if((m.name||'').endsWith('_TBR_PREMULTIPLY')){m.extensions=m.extensions||{};m.extensions.TBR_materials_premultiply={premultipliedAlpha:true};used=true}
+  if(used){j.extensionsUsed=j.extensionsUsed||[];if(!j.extensionsUsed.includes('TBR_materials_premultiply'))j.extensionsUsed.push('TBR_materials_premultiply')}}
+function patchGLBJson(u8,fn){const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength),jl=dv.getUint32(12,true),json=JSON.parse(new TextDecoder().decode(u8.subarray(20,20+jl)));fn(json);
+  let js=new TextEncoder().encode(JSON.stringify(json));const pj=(4-js.length%4)%4;if(pj){const t=new Uint8Array(js.length+pj).fill(0x20);t.set(js);js=t}
+  const rest=u8.subarray(20+jl),total=20+js.length+rest.length,out=new Uint8Array(total),o=new DataView(out.buffer);
+  o.setUint32(0,0x46546C67,true);o.setUint32(4,2,true);o.setUint32(8,total,true);o.setUint32(12,js.length,true);o.setUint32(16,0x4E4F534A,true);out.set(js,20);out.set(rest,20+js.length);return out}
+async function glbRaw(mode,cap){const p=st.model.p,tob=mode==='tobira',root=new THREE.Group();root.name='acrylic_stand';
+  const unit=tob&&rv('tbScale')==='h3'?3/p.h:0.001;root.scale.setScalar(unit);const cl=stand.clone(true);root.add(cl);
+  const texFor=new Map();cl.traverse(o=>{const m=o.material;if(!o.isMesh||!m||Array.isArray(m)||!m.map||!m.map.image)return;const src=m.map.image,c=capFor(m.name,cap,tob),sc=scaled(src,c);if(sc===src)return;
+    const key=src;if(!texFor.has(key))texFor.set(key,new Map());const tm=texFor.get(key);if(!tm.has(c)){const t=m.map.clone();t.image=sc;t.needsUpdate=true;tm.set(c,t)}const nm=m.clone();nm.map=tm.get(c);o.material=nm});
+  if(mode==='simple')cl.traverse(o=>{if(o.isMesh&&(o.material===acrylic||o.material===baseClear))o.material=simpleAcrylic});
+  if(tob){const edge=$('tbEdge').checked;cl.traverse(o=>{if(o.isMesh&&(o.material===acrylic||o.material===baseClear))o.material=edge?[tobiraAcrylic,tobiraEdge]:tobiraAcrylic})}
+  const mats=[acrylic,baseClear],keep=mats.map(m=>m.attenuationDistance);mats.forEach(m=>m.attenuationDistance*=unit);
   try{const buf=await new GLTFExporter().parseAsync(root,{binary:true});return new Uint8Array(buf)}finally{mats.forEach((m,i)=>m.attenuationDistance=keep[i])}}
 function cutSVG(){const {o,p}=st.model,pts=o.pts,b=new THREE.Box2().setFromPoints(pts),m=3;let minX=b.min.x,maxX=b.max.x,maxY=b.max.y,minY=b.min.y;
   const bs=st.baseShape?st.baseShape.getPoints(64):null,bh=st.baseShape?st.baseShape.holes[0].getPoints():null;
@@ -692,14 +723,15 @@ function cutSVG(){const {o,p}=st.model,pts=o.pts,b=new THREE.Box2().setFromPoint
 <g id="cut_line" fill="none" stroke="#e6007e" stroke-width="0.1"><path d="${P1}"/>${bs?`<path d="${path(bs)}"/><path d="${path(bh)}"/>`:''}</g>
 </svg>`,plate:P1,W,H}}
 const TARGETS={
+  tobira:{dir:'tobiratory',mode:'tobira',name:'Tobiratory',read:'Tobiratoryアプリ向け（UserUploadedModelとしてアップロード）。\n・アクリルのマテリアル名は acrylic_TBR_PREMULTIPLY。アプリ読み込み時に、アプリ専用のアクリル素材へ自動で置き換わります（TBR_materials_premultiply も付与）。\n・ふち（側面）は acrylic_edge という別素材で、アクスタの断面の光り方を出しています。\n・画像は本体2048px・台座1024pxまで（image2modelと同じ）。\n・アップロード上限は10MBです。'},
   web:{dir:'web_blender',mode:'real',name:'Web・Blender・Sketchfab',read:'リアル版。透過・屈折・厚み・虹色入り。\nBlender（ファイル→インポート→glTF）、Sketchfab、three.js、model-viewer などでそのまま透明に見えます。'},
   urp:{dir:'unity_urp',mode:'real',name:'Unity URP',read:'Unity URP向け（UnityGLTFで読み込む前提）。\n1. Window → Package Manager → ＋ → Add package from git URL… に https://github.com/KhronosGroup/UnityGLTF.git を入力\n2. GLBを Assets にドラッグ\n3. 使っている URP Asset の「Opaque Texture」をオン（屈折を出すため）\n※glTFastで読む場合は、透過がうまく出なければ unity_builtin のGLBを使ってください。'},
   hdrp:{dir:'unity_hdrp',mode:'nodisp',name:'Unity HDRP',read:'Unity HDRP向け（glTFastで読み込む前提）。\n1. Window → Package Manager → ＋ → Add package by name… に com.unity.cloud.gltfast を入力\n2. GLBを Assets にドラッグ\n※虹色（dispersion）はglTFastが非対応のため外しています。透明なアクリルとして読み込まれます。'},
   birp:{dir:'unity_builtin_other',mode:'simple',name:'Unity Built-In・その他',read:'互換版。アクリルを半透明（アルファ）で表現しています。\nUnity Built-In（glTFast / UnityGLTF どちらでも）や、透過に対応していないビューアで確実に透けて見えます。'}};
 async function glbVariant(mode){if(mode!=='nodisp')return glbBytes(mode==='simple');const k=[acrylic.dispersion,baseClear.dispersion];acrylic.dispersion=baseClear.dispersion=0;try{return await glbBytes(false)}finally{acrylic.dispersion=k[0];baseClear.dispersion=k[1]}}
 $('expGlb').onclick=async()=>{if(!st.model)return;const tg=rv('glbTarget'),enc=new TextEncoder(),files=[];msg('3Dデータを作っています…');
-  try{const keys=tg==='all'?Object.keys(TARGETS):[tg];let readme='アクリルスタンド 3Dデータ（GLB）\n単位はメートル（実寸）。Unityの1単位＝1mとそのまま合います。\n絵柄と白版は透明部分を切り抜く設定（alphaMode MASK）で入っています。\n';
-    for(const k of keys){const t=TARGETS[k],g=await glbVariant(t.mode);files.push({name:(keys.length>1?t.dir+'/':'')+'acrylic_stand_'+t.dir+'.glb',data:g});readme+=`\n■ ${t.name}（${keys.length>1?t.dir+'/':''}acrylic_stand_${t.dir}.glb）\n${t.read}\n`}
+  try{const keys=tg==='all'?Object.keys(TARGETS):[tg];let readme='アクリルスタンド 3Dデータ（GLB）\n単位はメートル（実寸）。Unityの1単位＝1mとそのまま合います。'+(keys.includes('tobira')&&rv('tbScale')==='h3'?'\n（Tobiratory版のみ、絵の高さ＝3にそろえています）':'')+'\n絵柄と白版は透明部分を切り抜く設定（alphaMode MASK）で入っています。\n';
+    for(const k of keys){const t=TARGETS[k],g=t.mode==='tobira'?await glbBytes('tobira'):await glbVariant(t.mode);if(t.mode==='tobira'&&g.length>10*1024*1024)msg('Tobiratory版が10MBを超えています。解像度を下げるか減色をオンにしてください',true);files.push({name:(keys.length>1?t.dir+'/':'')+'acrylic_stand_'+t.dir+'.glb',data:g});readme+=`\n■ ${t.name}（${keys.length>1?t.dir+'/':''}acrylic_stand_${t.dir}.glb）\n${t.read}\n`}
     files.push({name:'README.txt',data:enc.encode(readme)});await save(base()+'_glb_'+(tg==='all'?'all':TARGETS[tg].dir)+'.zip',zip(files))}
   catch(e){msg('GLBの書き出しに失敗しました。',true)}};
 $('expPng').onclick=async()=>{renderer.render(scene,camera);await save(base()+'_preview.png',await canvasBlob(renderer.domElement))};
