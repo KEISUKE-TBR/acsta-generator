@@ -113,6 +113,20 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
 .legend{flex-direction:row!important;flex-wrap:wrap;gap:12px!important}
 #tip{position:fixed;z-index:50;pointer-events:none;background:var(--ink);color:var(--bg);font-size:13px;font-weight:500;line-height:1.4;padding:5px 10px;border-radius:8px;max-width:240px;opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s}
 #tip.on{opacity:1;transform:none}
+
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0 -20px 14px;border-bottom:1px solid var(--line);position:sticky;top:-22px;background:var(--bg);z-index:2}
+.tab{display:grid;place-items:center;height:50px;border:0;background:transparent;color:var(--sub);cursor:pointer;position:relative}
+.tab .ms{font-size:24px}.tab:hover{color:var(--ink);background:var(--field)}
+.tab[aria-selected=true]{color:var(--acc)}.tab[aria-selected=true] .ms{font-variation-settings:'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 24}
+.tab[aria-selected=true]::after{content:"";position:absolute;left:22%;right:22%;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:var(--acc)}
+.tabp[hidden]{display:none}
+.bstack{display:grid;grid-template-rows:minmax(0,1fr) 44px;gap:6px;height:100%}.bstack .bigbtn{min-height:0}
+.bstack .ib{width:100%;background:var(--bg);border:1.5px solid var(--line)}
+.sec{border-top:1px solid var(--line);margin-top:14px;padding-top:6px}
+.exp2{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.xb{display:grid;place-items:center;align-content:center;gap:6px;aspect-ratio:1;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
+.xb .ms{font-size:34px}.xb b{font-size:14px}.xb:hover{background:var(--field)}
+.xb.acc{background:var(--acc);border-color:var(--acc);color:#fff}
 @media(max-width:900px){.app{grid-template-columns:1fr;height:auto}.stage{position:sticky;top:0;z-index:2;height:52vh;min-height:340px}.panel{border-left:0;overflow:visible}}
 @media(max-width:600px){.vb{min-width:52px;padding:6px 4px 4px}.chip{display:none}.legend{bottom:80px}}
 @media(prefers-reduced-motion:reduce){.busy .ms{animation:none}}
@@ -146,6 +160,12 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
 
   <aside class="panel" id="panel">
     <div class="brand"><span class="ms">view_in_ar</span><h1>アクスタジェネレーター</h1></div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="t-body" aria-selected="true" aria-controls="tab-body" data-tip="本体（アクリル板）"><span class="ms">crop_portrait</span></button>
+      <button class="tab" role="tab" id="t-base" aria-selected="false" aria-controls="tab-base" data-tip="台座"><span class="ms">foundation</span></button>
+      <button class="tab" role="tab" id="t-exp" aria-selected="false" aria-controls="tab-exp" data-tip="書き出し"><span class="ms">download</span></button>
+    </div>
+    <div class="tabp" id="tab-body" role="tabpanel" aria-labelledby="t-body">
 
     <div class="upl">
       <div class="thumb" data-tip="切り抜き結果（赤線＝カットライン）"><canvas id="prev" width="400" height="400"></canvas></div>
@@ -204,31 +224,47 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
       </div>
     </details>
 
-    <details>
-      <summary data-tip="台座"><span class="ms lead">foundation</span><span class="val" id="sumBase"></span><span class="ms chev">expand_more</span></summary>
-      <div class="body">
-        <div class="seg" role="radiogroup" aria-label="台座の形">
-          <label data-tip="だ円"><input type="radio" name="base" value="ellipse" data-k checked><svg viewBox="0 0 26 22"><ellipse cx="13" cy="11" rx="11" ry="7"/></svg></label>
-          <label data-tip="角丸"><input type="radio" name="base" value="round" data-k><svg viewBox="0 0 26 22"><rect x="2" y="4" width="22" height="14" rx="4"/></svg></label>
-          <label data-tip="まる"><input type="radio" name="base" value="circle" data-k><svg viewBox="0 0 26 22"><circle cx="13" cy="11" r="9"/></svg></label>
-          <label data-tip="台座なし"><input type="radio" name="base" value="none" data-k><span class="ms">block</span></label>
-        </div>
-        <div class="seg" role="radiogroup" aria-label="台座の色">
-          <label data-tip="クリア"><input type="radio" name="baseMat" value="clear" data-k checked><span class="sw" style="background:linear-gradient(135deg,#ffffff,#d8efe8)"></span></label>
-          <label data-tip="ホワイト"><input type="radio" name="baseMat" value="white" data-k><span class="sw" style="background:#f4f4f2"></span></label>
-          <label data-tip="ブラック"><input type="radio" name="baseMat" value="black" data-k><span class="sw" style="background:#111"></span></label>
-        </div>
-        <div class="row" data-tip="台座の大きさ"><span class="ms">aspect_ratio</span><input type="range" id="baseSize" data-k min="50" max="150" value="85" data-unit="%" aria-label="台座の大きさ"><output data-for="baseSize"></output></div>
-        <div class="row" data-tip="台座の厚み"><span class="ms">vertical_align_bottom</span><input type="range" id="baseT" data-k min="2" max="10" value="5" data-unit="mm" aria-label="台座の厚み"><output data-for="baseT"></output></div>
-        <div class="row" data-tip="差し込みの幅"><span class="ms">width</span><input type="range" id="tabW" data-k min="8" max="60" value="20" data-unit="mm" aria-label="差し込みの幅"><output data-for="tabW"></output></div>
-        <div class="row" data-tip="差し込みの位置（左右）"><span class="ms">swap_horiz</span><input type="range" id="tabX" data-k min="-40" max="40" value="0" data-unit="mm" aria-label="差し込みの位置"><output data-for="tabX"></output></div>
-      </div>
-    </details>
+    </div>
 
-    <div class="exp">
-      <button class="btn acc" id="expGlb" data-tip="3Dデータ（GLB）を保存・zip入り"><span class="ms">view_in_ar</span>GLB</button>
-      <button class="btn ghost" id="expKit" data-tip="入稿用データ一式（印刷・白版・カットパス）"><span class="ms">inventory_2</span></button>
-      <button class="btn ghost" id="expPng" data-tip="いまの見た目をPNGで保存"><span class="ms">photo_camera</span></button>
+    <div class="tabp" id="tab-base" role="tabpanel" aria-labelledby="t-base" hidden>
+      <div class="upl">
+        <div class="thumb" id="bthumb" data-tip="台座を上から見た形（赤線＝カットライン、青＝差し込み穴）"><canvas id="bprev" width="400" height="400"></canvas></div>
+        <div class="bstack">
+          <label class="bigbtn" for="baseFile" data-tip="台座用の画像を選ぶ（その形でカット・上面に印刷）"><span class="ms">add_photo_alternate</span></label>
+          <button class="ib" id="baseClear" data-tip="台座の画像を外す" disabled><span class="ms">delete</span></button>
+        </div>
+        <input type="file" id="baseFile" accept="image/*" hidden>
+      </div>
+      <div class="seg" role="radiogroup" aria-label="台座の形">
+        <label data-tip="だ円"><input type="radio" name="base" value="ellipse" data-k checked><svg viewBox="0 0 26 22"><ellipse cx="13" cy="11" rx="11" ry="7"/></svg></label>
+        <label data-tip="角丸"><input type="radio" name="base" value="round" data-k><svg viewBox="0 0 26 22"><rect x="2" y="4" width="22" height="14" rx="4"/></svg></label>
+        <label data-tip="まる"><input type="radio" name="base" value="circle" data-k><svg viewBox="0 0 26 22"><circle cx="13" cy="11" r="9"/></svg></label>
+        <label data-tip="画像の形（アップロードした画像）"><input type="radio" name="base" value="image" data-k><span class="ms">image</span></label>
+        <label data-tip="台座なし"><input type="radio" name="base" value="none" data-k><span class="ms">block</span></label>
+      </div>
+      <div class="seg" role="radiogroup" aria-label="台座の色">
+        <label data-tip="クリア（画像は裏刷り）"><input type="radio" name="baseMat" value="clear" data-k checked><span class="sw" style="background:linear-gradient(135deg,#ffffff,#d8efe8)"></span></label>
+        <label data-tip="ホワイト（画像は上面に印刷）"><input type="radio" name="baseMat" value="white" data-k><span class="sw" style="background:#f4f4f2"></span></label>
+        <label data-tip="ブラック（画像は上面に印刷）"><input type="radio" name="baseMat" value="black" data-k><span class="sw" style="background:#111"></span></label>
+      </div>
+      <div class="sec">
+        <div class="row" data-tip="台座の大きさ（板の幅に対して）"><span class="ms">aspect_ratio</span><input type="range" id="baseSize" data-k min="50" max="200" value="85" data-unit="%" aria-label="台座の大きさ"><output data-for="baseSize"></output></div>
+        <div class="row" data-tip="台座の厚み"><span class="ms">vertical_align_bottom</span><input type="range" id="baseT" data-k min="2" max="10" value="5" data-unit="mm" aria-label="台座の厚み"><output data-for="baseT"></output></div>
+        <div class="row" data-tip="台座画像のカット余白"><span class="ms">border_outer</span><input type="range" id="baseMargin" data-k min="0.5" max="10" step="0.5" value="3" data-unit="mm" aria-label="台座画像のカット余白"><output data-for="baseMargin"></output></div>
+      </div>
+      <div class="sec">
+        <div class="row" data-tip="差し込みの幅"><span class="ms">width</span><input type="range" id="tabW" data-k min="8" max="60" value="20" data-unit="mm" aria-label="差し込みの幅"><output data-for="tabW"></output></div>
+        <div class="row" data-tip="差し込みの位置（左右）"><span class="ms">swap_horiz</span><input type="range" id="tabX" data-k min="-40" max="40" value="0" data-unit="mm" aria-label="差し込みの位置 左右"><output data-for="tabX"></output></div>
+        <div class="row" data-tip="差し込みの位置（前後・＋で奥）"><span class="ms">swap_vert</span><input type="range" id="slotZ" data-k min="-30" max="30" value="0" data-unit="mm" aria-label="差し込みの位置 前後"><output data-for="slotZ"></output></div>
+      </div>
+    </div>
+
+    <div class="tabp" id="tab-exp" role="tabpanel" aria-labelledby="t-exp" hidden>
+      <div class="exp2">
+        <button class="xb acc" id="expGlb" data-tip="3Dデータ（GLB）を保存・zip入り"><span class="ms">view_in_ar</span><b>GLB</b></button>
+        <button class="xb" id="expKit" data-tip="入稿用データ一式（印刷・白版・カットパス）"><span class="ms">inventory_2</span><b>入稿</b></button>
+        <button class="xb" id="expPng" data-tip="いまの見た目をPNGで保存"><span class="ms">photo_camera</span><b>PNG</b></button>
+      </div>
     </div>
     <p id="msg" role="status"></p>
   </aside>
@@ -252,7 +288,7 @@ for(const o of [...document.querySelectorAll('output[data-for]')]){const r=$(o.d
   n.addEventListener('change',commitNum);n.addEventListener('keydown',e=>{if(e.key==='Enter'){commitNum();n.blur()}})}
 const syncOut=()=>{for(const n of document.querySelectorAll('.num input')){if(document.activeElement!==n)n.value=$(n.id.slice(2)).value}};
 const rv=n=>document.querySelector(`input[name="${n}"]:checked`).value;
-const P=()=>({h:+$('h').value,t:+rv('t'),margin:+$('margin').value,smooth:+$('smooth').value,white:rv('white'),gloss:+$('gloss').value/100,tint:+$('tint').value/100,rainbow:+$('rainbow').value/100,base:rv('base'),baseMat:rv('baseMat'),baseSize:+$('baseSize').value/100,baseT:+$('baseT').value,tabW:+$('tabW').value,tabX:+$('tabX').value,bg:$('bg').checked,tol:+$('tol').value});
+const P=()=>({h:+$('h').value,t:+rv('t'),margin:+$('margin').value,smooth:+$('smooth').value,white:rv('white'),gloss:+$('gloss').value/100,tint:+$('tint').value/100,rainbow:+$('rainbow').value/100,base:rv('base'),baseMat:rv('baseMat'),baseSize:+$('baseSize').value/100,baseT:+$('baseT').value,tabW:+$('tabW').value,tabX:+$('tabX').value,baseMargin:+$('baseMargin').value,slotZ:+$('slotZ').value,bg:$('bg').checked,tol:+$('tol').value});
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.round(w));c.height=Math.max(1,Math.round(h));return c};
 /* ---------- three.js scene ---------- */
 const view=$('view');
@@ -341,84 +377,117 @@ function rdp(p,eps){if(p.length<4)return p;const keep=new Uint8Array(p.length);k
     if(md>eps&&mi>0){keep[mi]=1;stack.push([a,mi],[mi,b])}}
   return p.filter((_,i)=>keep[i])}
 
-function buildOutline(p){
-  const art=st.art,aw=art.width,ah=art.height,gs=Math.min(1,640/Math.max(aw,ah)),gw=aw*gs,gh=ah*gs,ppm=gh/p.h;
-  const hasBase=p.base!=='none',tabPx=hasBase?Math.round(p.baseT*ppm):0,mPx=p.margin*ppm,rPx=Math.max(0,p.smooth-4)*1.2*ppm;
-  const pad=Math.ceil(mPx+rPx)+3,W=Math.ceil(gw)+2*pad,H=Math.ceil(gh)+2*pad+tabPx+2;
+function rasterize(art,gw,gh,pad,extraB){const W=Math.ceil(gw)+2*pad,H=Math.ceil(gh)+2*pad+extraB;
   const sc=mk(Math.ceil(gw),Math.ceil(gh)),sx=sc.getContext('2d',{willReadFrequently:true});sx.drawImage(art,0,0,gw,gh);
-  const ad=sx.getImageData(0,0,sc.width,sc.height).data;let m=new Uint8Array(W*H);
-  for(let y=0;y<sc.height;y++)for(let x=0;x<sc.width;x++)if(ad[(y*sc.width+x)*4+3]>40)m[(y+pad)*W+x+pad]=1;
+  const ad=sx.getImageData(0,0,sc.width,sc.height).data,m=new Uint8Array(W*H);
+  for(let y=0;y<sc.height;y++)for(let x=0;x<sc.width;x++)if(ad[(y*sc.width+x)*4+3]>40)m[(y+pad)*W+x+pad]=1;return {m,W,H}}
+function morph(m,W,H,mPx,rPx){
   if(mPx>0.5){const d=chamfer(m,W,H);for(let i=0;i<W*H;i++)m[i]=d[i]<=mPx?1:0}
-  if(rPx>0.5){const d=chamfer(m,W,H);for(let i=0;i<W*H;i++)m[i]=d[i]<=rPx?1:0;const inv=new Uint8Array(W*H);for(let i=0;i<W*H;i++)inv[i]=1-m[i];const e=chamfer(inv,W,H);for(let i=0;i<W*H;i++)m[i]=e[i]>rPx?1:0}
-  // keep largest piece
-  const lab=new Int32Array(W*H),q=new Int32Array(W*H);let best=0,bestN=0,lbl=0,pieces=0;
+  if(rPx>0.5){const d=chamfer(m,W,H);for(let i=0;i<W*H;i++)m[i]=d[i]<=rPx?1:0;const inv=new Uint8Array(W*H);for(let i=0;i<W*H;i++)inv[i]=1-m[i];const e=chamfer(inv,W,H);for(let i=0;i<W*H;i++)m[i]=e[i]>rPx?1:0}}
+function keepLargest(m,W,H){const lab=new Int32Array(W*H),q=new Int32Array(W*H);let best=0,bestN=0,lbl=0,pieces=0;
   for(let i=0;i<W*H;i++){if(!m[i]||lab[i])continue;lbl++;let h0=0,t0=0;q[t0++]=i;lab[i]=lbl;
     while(h0<t0){const j=q[h0++],x=j%W,y=(j/W)|0;for(const [dx,dy] of N8){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=W||ny>=H)continue;const k=ny*W+nx;if(m[k]&&!lab[k]){lab[k]=lbl;q[t0++]=k}}}
     if(t0>30)pieces++;if(t0>bestN){bestN=t0;best=lbl}}
-  for(let i=0;i<W*H;i++)m[i]=lab[i]===best?1:0;
+  for(let i=0;i<W*H;i++)m[i]=lab[i]===best?1:0;return pieces}
+function fillHoles(m,W,H){const out=new Uint8Array(W*H),q=new Int32Array(W*H);let h1=0,t1=0;q[t1++]=0;out[0]=1;
+  while(h1<t1){const j=q[h1++],x=j%W,y=(j/W)|0;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=W||ny>=H)continue;const k=ny*W+nx;if(!m[k]&&!out[k]){out[k]=1;q[t1++]=k}}}
+  for(let i=0;i<W*H;i++)if(!out[i])m[i]=1}
+const contour=(m,W,H,smooth)=>rdp(smoothPts(trace(m,W,H),Math.min(smooth,4)+(smooth>4?2:0)),0.35);
+
+/* 本体の輪郭 */
+function buildOutline(p){
+  const art=st.art,aw=art.width,ah=art.height,gs=Math.min(1,640/Math.max(aw,ah)),gw=aw*gs,gh=ah*gs,ppm=gh/p.h;
+  const hasBase=p.base!=='none',tabPx=hasBase?Math.round(p.baseT*ppm):0,mPx=p.margin*ppm,rPx=Math.max(0,p.smooth-4)*1.2*ppm;
+  const pad=Math.ceil(mPx+rPx)+3,{m,W,H}=rasterize(art,gw,gh,pad,tabPx+2);
+  morph(m,W,H,mPx,rPx);const pieces=keepLargest(m,W,H);
   let bottom=0;for(let i=W*H-1;i>=0;i--)if(m[i]){bottom=(i/W)|0;break}
   const cx0=pad+gw/2;let origin=bottom;
   if(hasBase){const tw=p.tabW*ppm,cx=cx0+p.tabX*ppm,xa=Math.max(1,Math.round(cx-tw/2)),xb=Math.min(W-2,Math.round(cx+tw/2)),gap=25*ppm;
     for(let x=xa;x<=xb;x++){for(let y=bottom+1;y<=bottom+tabPx;y++)m[y*W+x]=1;
       let y=bottom;while(y>bottom-gap&&y>1&&!m[y*W+x])y--;if(m[y*W+x])for(let yy=y;yy<=bottom;yy++)m[yy*W+x]=1}
     origin=bottom+tabPx}
-  // fill holes
-  const out=new Uint8Array(W*H);let h1=0,t1=0;q[t1++]=0;out[0]=1;
-  while(h1<t1){const j=q[h1++],x=j%W,y=(j/W)|0;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=W||ny>=H)continue;const k=ny*W+nx;if(!m[k]&&!out[k]){out[k]=1;q[t1++]=k}}}
-  for(let i=0;i<W*H;i++)if(!out[i])m[i]=1;
-  let pts=rdp(smoothPts(trace(m,W,H),Math.min(p.smooth,4)+(p.smooth>4?2:0)),0.35);
-  pts=pts.map(([x,y])=>new THREE.Vector2((x-cx0)/ppm,(origin-y)/ppm));
+  fillHoles(m,W,H);
+  const pts=contour(m,W,H,p.smooth).map(([x,y])=>new THREE.Vector2((x-cx0)/ppm,(origin-y)/ppm));
   return {pts,artW:gw/ppm,artH:p.h,artCY:(origin-(pad+gh/2))/ppm,pieces}}
 
-function whiteCanvas(p){const art=st.art,w=art.width,h=art.height,a=art.getContext('2d',{willReadFrequently:true}).getImageData(0,0,w,h).data;
+/* 台座画像の輪郭（上から見た形。y＋が奥） */
+function baseOutline(p,bw){
+  const art=st.baseArt,aw=art.width,ah=art.height,gs=Math.min(1,640/Math.max(aw,ah)),gw=aw*gs,gh=ah*gs;
+  const artW=Math.max(10,bw-2*p.baseMargin),ppm=gw/artW,mPx=p.baseMargin*ppm,rPx=Math.max(0,p.smooth-4)*1.2*ppm;
+  const slotR=Math.max(Math.abs(p.tabX)+p.tabW/2,Math.abs(p.slotZ)+p.t/2)+4;
+  const pad=Math.ceil(Math.max(mPx+rPx,slotR*ppm-Math.min(gw,gh)/2,0))+4,{m,W,H}=rasterize(art,gw,gh,pad,0);
+  morph(m,W,H,mPx,rPx);keepLargest(m,W,H);
+  const cx0=pad+gw/2,cy0=pad+gh/2,sx=cx0+p.tabX*ppm,sy=cy0-p.slotZ*ppm,hw=(p.tabW/2+3)*ppm,hd=(p.t/2+3)*ppm;
+  let inside=true;for(const [dx,dy] of [[-1,-1],[1,-1],[1,1],[-1,1]]){const x=Math.round(sx+dx*(hw-3*ppm)),y=Math.round(sy+dy*(hd-3*ppm));if(!m[y*W+x])inside=false}
+  for(let y=Math.max(1,Math.round(sy-hd));y<=Math.min(H-2,Math.round(sy+hd));y++)for(let x=Math.max(1,Math.round(sx-hw));x<=Math.min(W-2,Math.round(sx+hw));x++)m[y*W+x]=1;
+  const pieces=keepLargest(m,W,H);fillHoles(m,W,H);
+  const pts=contour(m,W,H,p.smooth).map(([x,y])=>new THREE.Vector2((x-cx0)/ppm,(cy0-y)/ppm));
+  return {pts,artW,artH:gh/ppm,inside:inside&&pieces<=1}}
+
+function whiteFor(art,pxPerMM,mode){const w=art.width,h=art.height,a=art.getContext('2d',{willReadFrequently:true}).getImageData(0,0,w,h).data;
   const fg=new Uint8Array(w*h);for(let i=0;i<w*h;i++)fg[i]=a[i*4+3]>128?1:0;let keep=fg;
-  if(p.white==='choke'){const inv=new Uint8Array(w*h);for(let i=0;i<w*h;i++)inv[i]=1-fg[i];const d=chamfer(inv,w,h),r=0.2*h/p.h;keep=new Uint8Array(w*h);for(let i=0;i<w*h;i++)keep[i]=fg[i]&&d[i]>r?1:0}
+  if(mode==='choke'){const inv=new Uint8Array(w*h);for(let i=0;i<w*h;i++)inv[i]=1-fg[i];const d=chamfer(inv,w,h),r=0.2*pxPerMM;keep=new Uint8Array(w*h);for(let i=0;i<w*h;i++)keep[i]=fg[i]&&d[i]>r?1:0}
   const c=mk(w,h),x=c.getContext('2d'),id=x.createImageData(w,h);for(let i=0;i<w*h;i++){id.data[i*4]=id.data[i*4+1]=id.data[i*4+2]=255;id.data[i*4+3]=keep[i]?255:0}
   x.putImageData(id,0,0);return c}
+const whiteCanvas=p=>whiteFor(st.art,st.art.height/p.h,p.white);
 
 /* ---------- build 3D ---------- */
-let firstFit=true,texCache=null;
-function clearStand(){stand.traverse(o=>{if(o.isMesh){o.geometry.dispose();if(o.material.map&&o.material.map!==texCache)o.material.map.dispose();if(!/acrylic|base_/.test(o.material.name))o.material.dispose()}});stand.clear()}
+let firstFit=true,texCache=null,baseTex=null;
+const keepTex=t=>t===texCache||t===baseTex;
+function clearStand(){stand.traverse(o=>{if(o.isMesh){o.geometry.dispose();if(o.material.map&&!keepTex(o.material.map))o.material.map.dispose();if(!/acrylic|base_/.test(o.material.name))o.material.dispose()}});stand.clear()}
+const inkMat=(map,side,name)=>new THREE.MeshStandardMaterial({map,alphaTest:0.5,alphaToCoverage:true,roughness:0.55,side,name});
+const whiteMat=(map,name)=>new THREE.MeshStandardMaterial({color:0xffffff,map,alphaTest:0.5,alphaToCoverage:true,roughness:0.75,side:THREE.DoubleSide,name});
 function build(){
   if(!st.art)return;const p=P();applyLook();
+  if(p.base==='image'&&!st.baseArt){p.base='ellipse'}
   let o;try{o=buildOutline(p)}catch(e){msg('形を作れませんでした。余白を変えてみてください',true);return}
   clearStand();
+  const plateG=new THREE.Group();plateG.name='plate_group';stand.add(plateG);
   const shape=new THREE.Shape(o.pts),bv=Math.min(0.35,p.t*0.12);
   const g=new THREE.ExtrudeGeometry(shape,{depth:p.t-2*bv,bevelEnabled:true,bevelThickness:bv,bevelSize:bv,bevelOffset:-bv,bevelSegments:3,curveSegments:1});
   g.translate(0,0,-(p.t-2*bv)/2);
-  const plate=new THREE.Mesh(g,acrylic);plate.name='acrylic_plate';stand.add(plate);
-  // printed art (reverse-printed on the back face)
+  const plate=new THREE.Mesh(g,acrylic);plate.name='acrylic_plate';plateG.add(plate);
   if(!texCache){texCache=new THREE.CanvasTexture(st.art);texCache.colorSpace=THREE.SRGBColorSpace;texCache.anisotropy=renderer.capabilities.getMaxAnisotropy()}
   const pg=new THREE.PlaneGeometry(o.artW,o.artH);
-  const ink=new THREE.MeshStandardMaterial({map:texCache,alphaTest:0.5,alphaToCoverage:true,roughness:0.55,side:p.white==='none'?THREE.DoubleSide:THREE.FrontSide,name:'print_ink'});
-  const pm=new THREE.Mesh(pg,ink);pm.name='print';pm.position.set(0,o.artCY,-p.t/2-0.03);pm.castShadow=true;stand.add(pm);st.pm=pm;st.wm=null;st.baseMesh=null;
+  const pm=new THREE.Mesh(pg,inkMat(texCache,p.white==='none'?THREE.DoubleSide:THREE.FrontSide,'print_ink'));pm.name='print';pm.position.set(0,o.artCY,-p.t/2-0.03);pm.castShadow=true;plateG.add(pm);st.pm=pm;st.wm=null;st.baseGroup=null;
   if(p.white!=='none'){let wm;
-    if(p.white==='full'){wm=new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(o.pts.map(v=>v.clone().multiplyScalar(1)))),null);wm.position.z=-p.t/2-0.08}
-    else{const t=new THREE.CanvasTexture(whiteCanvas(p));t.colorSpace=THREE.SRGBColorSpace;wm=new THREE.Mesh(pg.clone(),null);wm.userData.tex=t;wm.position.set(0,o.artCY,-p.t/2-0.08)}
-    wm.material=new THREE.MeshStandardMaterial({color:0xffffff,map:wm.userData.tex||null,alphaTest:0.5,alphaToCoverage:true,roughness:0.75,side:THREE.DoubleSide,name:'white_ink'});
-    wm.name='white_plate';wm.castShadow=true;stand.add(wm);st.wm=wm}
+    if(p.white==='full'){wm=new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(o.pts)),whiteMat(null,'white_ink'));wm.position.z=-p.t/2-0.08}
+    else{const t=new THREE.CanvasTexture(whiteCanvas(p));t.colorSpace=THREE.SRGBColorSpace;wm=new THREE.Mesh(pg.clone(),whiteMat(t,'white_ink'));wm.position.set(0,o.artCY,-p.t/2-0.08)}
+    wm.name='white_plate';wm.castShadow=true;plateG.add(wm);st.wm=wm}
   // base
   const box=new THREE.Box2().setFromPoints(o.pts),pw=box.max.x-box.min.x,ph=box.max.y-box.min.y;
-  let bw=0,bd=0;
-  if(p.base!=='none'){bw=Math.max(pw*p.baseSize,2*Math.abs(p.tabX)+p.tabW+14);bd=p.base==='circle'?bw:Math.max(Math.min(bw*0.62,90),Math.max(30,p.t*6));
-    const s=new THREE.Shape();
-    if(p.base==='round'){const r=Math.min(10,bd/3),x=-bw/2,y=-bd/2;s.moveTo(x+r,y);s.lineTo(x+bw-r,y);s.quadraticCurveTo(x+bw,y,x+bw,y+r);s.lineTo(x+bw,y+bd-r);s.quadraticCurveTo(x+bw,y+bd,x+bw-r,y+bd);s.lineTo(x+r,y+bd);s.quadraticCurveTo(x,y+bd,x,y+bd-r);s.lineTo(x,y+r);s.quadraticCurveTo(x,y,x+r,y)}
-    else s.absellipse(0,0,bw/2,bd/2,0,Math.PI*2,false);
-    const sw=p.tabW+0.2,sd=p.t+0.2,hx=p.tabX,hole=new THREE.Path();hole.moveTo(hx-sw/2,-sd/2);hole.lineTo(hx+sw/2,-sd/2);hole.lineTo(hx+sw/2,sd/2);hole.lineTo(hx-sw/2,sd/2);hole.closePath();s.holes.push(hole);
+  let bw=0,bd=0,warnSlot=false;st.baseShape=null;st.bo=null;
+  if(p.base!=='none'){bw=Math.max(pw*p.baseSize,2*Math.abs(p.tabX)+p.tabW+14);
+    let s,bo=null;
+    if(p.base==='image'){bo=baseOutline(p,bw);s=new THREE.Shape(bo.pts);const bb2=new THREE.Box2().setFromPoints(bo.pts);bw=bb2.max.x-bb2.min.x;bd=bb2.max.y-bb2.min.y;warnSlot=!bo.inside;st.bo=bo}
+    else{bd=p.base==='circle'?bw:Math.max(Math.min(bw*0.62,90),Math.max(30,p.t*6),2*Math.abs(p.slotZ)+p.t+16);s=new THREE.Shape();
+      if(p.base==='round'){const r=Math.min(10,bd/3),x=-bw/2,y=-bd/2;s.moveTo(x+r,y);s.lineTo(x+bw-r,y);s.quadraticCurveTo(x+bw,y,x+bw,y+r);s.lineTo(x+bw,y+bd-r);s.quadraticCurveTo(x+bw,y+bd,x+bw-r,y+bd);s.lineTo(x+r,y+bd);s.quadraticCurveTo(x,y+bd,x,y+bd-r);s.lineTo(x,y+r);s.quadraticCurveTo(x,y,x+r,y)}
+      else s.absellipse(0,0,bw/2,bd/2,0,Math.PI*2,false)}
+    const sw=p.tabW+0.2,sd=p.t+0.2,hx=p.tabX,hz=p.slotZ,hole=new THREE.Path();hole.moveTo(hx-sw/2,hz-sd/2);hole.lineTo(hx+sw/2,hz-sd/2);hole.lineTo(hx+sw/2,hz+sd/2);hole.lineTo(hx-sw/2,hz+sd/2);hole.closePath();s.holes.push(hole);
     const bb=Math.min(0.5,p.baseT*0.15),bg=new THREE.ExtrudeGeometry(s,{depth:p.baseT-2*bb,bevelEnabled:true,bevelThickness:bb,bevelSize:bb,bevelOffset:-bb,bevelSegments:3,curveSegments:64});
     bg.translate(0,0,bb);bg.rotateX(-Math.PI/2);
     const mat={clear:baseClear,white:baseWhite,black:baseBlack}[p.baseMat];
-    const base=new THREE.Mesh(bg,mat);base.name='base';base.castShadow=p.baseMat!=='clear';base.receiveShadow=true;stand.add(base);st.baseMesh=base;st.baseShape=s}
-  else st.baseShape=null;
+    const baseG=new THREE.Group();baseG.name='base_group';stand.add(baseG);st.baseGroup=baseG;
+    const base=new THREE.Mesh(bg,mat);base.name='base';base.castShadow=p.baseMat!=='clear';base.receiveShadow=true;baseG.add(base);st.baseShape=s;
+    if(bo){if(!baseTex){baseTex=new THREE.CanvasTexture(st.baseArt);baseTex.colorSpace=THREE.SRGBColorSpace;baseTex.anisotropy=renderer.capabilities.getMaxAnisotropy()}
+      const clear=p.baseMat==='clear',yP=clear?0.06:p.baseT+0.04,yW=clear?0.03:p.baseT+0.02,bpg=new THREE.PlaneGeometry(bo.artW,bo.artH).rotateX(-Math.PI/2);
+      const bp=new THREE.Mesh(bpg,inkMat(baseTex,clear&&p.white==='none'?THREE.DoubleSide:THREE.FrontSide,'base_print_ink'));bp.name='base_print';bp.position.y=yP;baseG.add(bp);
+      if(p.white!=='none'){let bwm;
+        if(p.white==='full')bwm=new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(bo.pts)).rotateX(-Math.PI/2),whiteMat(null,'base_white_ink'));
+        else{const t=new THREE.CanvasTexture(whiteFor(st.baseArt,st.baseArt.width/bo.artW,p.white));t.colorSpace=THREE.SRGBColorSpace;bwm=new THREE.Mesh(bpg.clone(),whiteMat(t,'base_white_ink'))}
+        bwm.name='base_white';bwm.position.y=yW;baseG.add(bwm)}}}
+  plateG.position.z=-p.slotZ;
   st.model={o,pw,ph,bw,bd,p};
   $('sizeInfo').textContent=`板 ${pw.toFixed(1)} × ${ph.toFixed(1)} mm`;
   $('thickInfo').textContent=p.base==='none'?`厚み ${p.t}mm・台座なし`:`厚み ${p.t}mm・台座 ${bw.toFixed(0)}×${bd.toFixed(0)}mm`;
-  if(o.pieces>1)msg(`離れたパーツ${o.pieces-1}個を除外中（余白を増やすとつながります）`,true);else if($('msg').className==='warn')msg('');
-  for(const m of [st.pm,st.wm,st.baseMesh])if(m)m.userData.p0=m.position.clone();setExplode(ex.v);drawPreview(o);summaries(p,pw,ph);
+  if(o.pieces>1)msg(`離れたパーツ${o.pieces-1}個を除外中（余白を増やすとつながります）`,true);
+  else if(warnSlot)msg('差し込み穴が台座の絵からはみ出しています。位置を調整してください',true);
+  else if($('msg').className==='warn')msg('');
+  for(const m of [st.pm,st.wm,st.baseGroup])if(m)m.userData.p0=m.position.clone();setExplode(ex.v);drawPreview(o);drawBasePreview(p);summaries(p,pw,ph);
   if(firstFit){fit('side');firstFit=false}}
 function fit(mode){if(!st.model)return;const {ph,pw,bd}=st.model,vt=Math.tan(THREE.MathUtils.degToRad(camera.fov/2)),ht=vt*camera.aspect,dist=Math.max((ph+12)/(2*vt),(Math.max(pw,bd||0)+12)/(2*ht))*1.35,ty=ph*0.48;
   const dir={front:[0,0.12,1],back:[0,0.12,-1],side:[0.62,0.32,0.9]}[mode];const v=new THREE.Vector3(...dir).normalize().multiplyScalar(dist);
-  controls.target.set(0,ty,0);camera.position.set(v.x,v.y+ty,v.z);controls.update();
+  const tz=-st.model.p.slotZ;controls.target.set(0,ty,tz);camera.position.set(v.x,v.y+ty,v.z+tz);controls.update();
   for(const [id,m] of [['vFront','front'],['vSide','side'],['vBack','back']])$(id).setAttribute('aria-pressed',m===mode)}
 
 /* ---------- view tools: explode / grid / loop ---------- */
@@ -426,7 +495,7 @@ const ex={v:0,target:0};
 function setExplode(e){const p=st.model?st.model.p:P();
   if(st.pm&&st.pm.userData.p0)st.pm.position.z=st.pm.userData.p0.z-e*(p.t*2+8);
   if(st.wm&&st.wm.userData.p0)st.wm.position.z=st.wm.userData.p0.z-e*(p.t*4+18);
-  if(st.baseMesh)st.baseMesh.position.y=-e*14}
+  if(st.baseGroup)st.baseGroup.position.y=-e*14}
 const grid=new THREE.GridHelper(400,40,0x888888,0x888888);grid.material.transparent=true;grid.material.opacity=0.28;grid.position.y=0.02;grid.visible=false;scene.add(grid);
 function tick(){if(Math.abs(ex.target-ex.v)>0.001){ex.v+=(ex.target-ex.v)*0.14;setExplode(ex.v)}controls.update();renderer.render(scene,camera)}
 const press=(id,on)=>$(id).setAttribute('aria-pressed',on);
@@ -447,7 +516,7 @@ function drawPreview(o){const c=$('prev'),x=c.getContext('2d'),S=c.width;x.image
   x.lineWidth=3;x.strokeStyle='#ff4747';x.stroke()}
 function summaries(p,pw,ph){$('sumCut').textContent=`余白 ${p.margin}mm`;$('sumSize').textContent=`${pw.toFixed(0)}×${ph.toFixed(0)}mm・${p.t}mm`;
   $('sumWhite').textContent={match:'絵柄どおり',choke:'少し内側',full:'板全体',none:'なし'}[p.white];
-  $('sumLook').textContent=p.gloss>0.3?'すりガラス':'ツヤ';$('sumBase').textContent=p.base==='none'?'なし':{ellipse:'だ円',round:'角丸',circle:'まる'}[p.base]+'・'+{clear:'クリア',white:'ホワイト',black:'ブラック'}[p.baseMat]}
+  $('sumLook').textContent=p.gloss>0.3?'すりガラス':'ツヤ';if($('sumBase'))$('sumBase').textContent=p.base==='none'?'なし':{ellipse:'だ円',round:'角丸',circle:'まる'}[p.base]+'・'+{clear:'クリア',white:'ホワイト',black:'ブラック'}[p.baseMat]}
 
 /* ---------- state, history, presets ---------- */
 const inputs=[...document.querySelectorAll('[data-k]')];
@@ -487,6 +556,29 @@ $('panel').addEventListener('change',e=>{const i=e.target;if(!i.matches('[data-k
  document.addEventListener('pointerdown',e=>{const el=e.target.closest('[data-tip]');if(e.pointerType==='touch'&&el){show(el);clearTimeout(tt);tt=setTimeout(hide,1400)}});
  document.addEventListener('focusin',e=>{const el=e.target.closest('[data-tip]');if(el&&e.target.matches(':focus-visible'))show(el)});
  document.addEventListener('focusout',hide);addEventListener('scroll',hide,true)}
+
+/* ---------- tabs ---------- */
+for(const t of document.querySelectorAll('.tab'))t.onclick=()=>{for(const u of document.querySelectorAll('.tab')){const on=u===t;u.setAttribute('aria-selected',on);$(u.getAttribute('aria-controls')).hidden=!on}};
+document.querySelector('.tabs').addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;const ts=[...document.querySelectorAll('.tab')],i=ts.indexOf(document.activeElement);if(i<0)return;const n=ts[(i+(e.key==='ArrowRight'?1:ts.length-1))%ts.length];n.focus();n.click()});
+
+/* ---------- base image ---------- */
+function drawBasePreview(p){const c=$('bprev'),x=c.getContext('2d'),S=c.width;x.imageSmoothingQuality='high';x.clearRect(0,0,S,S);
+  for(let yy=0;yy<S;yy+=16)for(let xx=0;xx<S;xx+=16){x.fillStyle=((xx+yy)/16)%2?'#ebebeb':'#fafafa';x.fillRect(xx,yy,16,16)}
+  if(!st.baseShape){x.fillStyle='#9a9a9a';x.font='600 26px "M PLUS 2",sans-serif';x.textAlign='center';x.fillText('—',S/2,S/2+9);return}
+  const pts=st.baseShape.getPoints(64),hole=st.baseShape.holes[0].getPoints(),b=new THREE.Box2().setFromPoints(pts),w=b.max.x-b.min.x,h=b.max.y-b.min.y,k=(S-28)/Math.max(w,h),ox=(S-w*k)/2,oy=(S-h*k)/2;
+  const X=v=>ox+(v-b.min.x)*k,Y=v=>oy+(b.max.y-v)*k,path=a=>{x.beginPath();a.forEach((v,i)=>i?x.lineTo(X(v.x),Y(v.y)):x.moveTo(X(v.x),Y(v.y)));x.closePath()};
+  path(pts);x.fillStyle=p.baseMat==='black'?'#2b2829':p.baseMat==='white'?'#ffffff':'rgba(221,236,251,.8)';x.fill();
+  if(st.bo)x.drawImage(st.baseArt,X(-st.bo.artW/2),Y(st.bo.artH/2),st.bo.artW*k,st.bo.artH*k);
+  x.lineWidth=3;x.strokeStyle='#ff4747';path(pts);x.stroke();path(hole);x.fillStyle='#177bde';x.fill()}
+function loadBase(img){stage.classList.add('loading');setTimeout(()=>{try{st.baseArt=prepareArt(img,P()).canvas;if(baseTex){baseTex.dispose();baseTex=null}
+  document.querySelector('input[name=base][value=image]').checked=true;$('baseClear').disabled=false;if($('baseSize').value<130){$('baseSize').value=130;syncOut()}build();commit();msg('台座を画像の形にしました')}
+  catch(e){msg(e.message,true)}finally{stage.classList.remove('loading')}},30)}
+function readBase(f){if(!f||!f.type.startsWith('image/')){msg('画像ファイルを選んでください',true);return}const img=new Image();img.onload=()=>loadBase(img);img.onerror=()=>msg('読み込めませんでした（PNG/JPG推奨）',true);img.src=URL.createObjectURL(f)}
+$('baseFile').addEventListener('change',e=>{readBase(e.target.files[0]);e.target.value=''});
+$('baseClear').onclick=()=>{st.baseArt=null;if(baseTex){baseTex.dispose();baseTex=null}$('baseClear').disabled=true;if(rv('base')==='image')document.querySelector('input[name=base][value=ellipse]').checked=true;build();commit()};
+document.querySelector('input[name=base][value=image]').addEventListener('change',()=>{if(!st.baseArt)$('baseFile').click()});
+$('bthumb').addEventListener('dragover',e=>{e.preventDefault();e.stopPropagation()});
+$('bthumb').addEventListener('drop',e=>{e.preventDefault();e.stopPropagation();readBase(e.dataTransfer.files[0])});
 /* ---------- loading images ---------- */
 const stage=$('stage');
 function loadImage(img,isNew){stage.classList.add('loading');
@@ -500,7 +592,7 @@ $('file').addEventListener('change',e=>{readFile(e.target.files[0]);e.target.val
 stage.addEventListener('dragover',e=>{e.preventDefault();stage.classList.add('over')});
 stage.addEventListener('dragleave',e=>{if(!stage.contains(e.relatedTarget))stage.classList.remove('over')});
 stage.addEventListener('drop',e=>{e.preventDefault();stage.classList.remove('over');readFile(e.dataTransfer.files[0])});
-$('panel').addEventListener('dragover',e=>e.preventDefault());$('panel').addEventListener('drop',e=>{e.preventDefault();readFile(e.dataTransfer.files[0])});
+$('panel').addEventListener('dragover',e=>e.preventDefault());$('panel').addEventListener('drop',e=>{e.preventDefault();($('tab-base').hidden?readFile:readBase)(e.dataTransfer.files[0])});
 /* ---------- export ---------- */
 const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
 const crc32=u=>{let c=0xffffffff;for(let i=0;i<u.length;i++)c=CRC[(c^u[i])&255]^(c>>>8);return (c^0xffffffff)>>>0};
@@ -543,10 +635,11 @@ $('expPng').onclick=async()=>{renderer.render(scene,camera);await save(base()+'_
 $('expKit').onclick=async()=>{if(!st.model)return;msg('入稿用データをまとめています…');const p=st.model.p,enc=new TextEncoder(),files=[];
   const toU8=async b=>new Uint8Array(await b.arrayBuffer());
   files.push({name:'1_print.png',data:await toU8(await canvasBlob(st.art))});
+  if(st.bo&&st.baseArt)files.push({name:'5_base_print.png',data:await toU8(await canvasBlob(st.baseArt))});
   const cs=cutSVG();files.push({name:'3_cutline.svg',data:enc.encode(cs.svg)});
   if(p.white==='full')files.push({name:'2_white_K100.svg',data:enc.encode(`<svg xmlns="http://www.w3.org/2000/svg" width="${cs.W.toFixed(3)}mm" height="${cs.H.toFixed(3)}mm" viewBox="0 0 ${cs.W.toFixed(3)} ${cs.H.toFixed(3)}"><path d="${cs.plate}" fill="#000"/></svg>`)});
   else if(p.white!=='none'){const w=whiteCanvas(p),k=mk(w.width,w.height),x=k.getContext('2d');x.drawImage(w,0,0);x.globalCompositeOperation='source-in';x.fillStyle='#000';x.fillRect(0,0,k.width,k.height);files.push({name:'2_white_K100.png',data:await toU8(await canvasBlob(k))})}
-  files.push({name:'0_README.txt',data:enc.encode(`アクスタ入稿用データ\n絵の高さ: ${p.h}mm / 板厚: ${p.t}mm / カット余白: ${p.margin}mm\n\n1_print.png  … 印刷する絵柄（${p.h}mm の高さで配置）\n2_white_K100 … 白版。白インクを置く範囲を黒(K100)で表しています\n3_cutline.svg … カットライン（マゼンタ）。青い点線は絵柄の配置範囲。台座がある場合は右側に台座と差し込み穴\n\n※印刷会社ごとに入稿ルールが違うので、テンプレートに合わせて配置し直してください。\n`)});
+  files.push({name:'0_README.txt',data:enc.encode(`アクスタ入稿用データ\n絵の高さ: ${p.h}mm / 板厚: ${p.t}mm / カット余白: ${p.margin}mm\n\n1_print.png  … 印刷する絵柄（${p.h}mm の高さで配置）\n2_white_K100 … 白版。白インクを置く範囲を黒(K100)で表しています\n3_cutline.svg … カットライン（マゼンタ）。青い点線は絵柄の配置範囲。台座がある場合は右側に台座と差し込み穴\n5_base_print.png … 台座に印刷する絵柄（台座を画像の形にしたとき）\n\n※印刷会社ごとに入稿ルールが違うので、テンプレートに合わせて配置し直してください。\n`)});
   try{files.push({name:'4_preview3d.glb',data:await glbBytes()})}catch(e){}
   await save(base()+'_入稿セット.zip',zip(files))};
 
