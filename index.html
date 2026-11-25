@@ -8,12 +8,13 @@
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..600,0..1,0&display=block" rel="stylesheet">
 <style>
-/* VOICE: 印刷所の作業台。静かで正確、主役は3Dのアクスタ
+/* PALETTE: KEISUKEのスタイルガイド（Base White/Black, Primary #177BDE, Secondary/Neutrals, Success/Warning/Error）
+   VOICE: 印刷所の作業台。静かで正確、主役は3Dのアクスタ
    IDEA: 入稿前の校正台 — 透明な板、白版、カットライン
    PICTURE: 画面の大半を占める3Dビュー＋切り抜き結果の2Dプレビュー
-   COLOUR and TYPE: 白い台＋墨＋プロセスマゼンタ（カットラインの色）。M PLUS 2＋Material Symbols Rounded
+   COLOUR and TYPE: Base White＋Base Black＋Primary（ブルー）。カットラインはError赤。M PLUS 2＋Material Symbols Rounded
    LAYOUT: 左に大きなステージとツールバー、右にアイコン付きの折りたたみパネル。狭い画面では縦積み */
-:root{color-scheme:light dark;--bg:light-dark(#ffffff,#141416);--ink:light-dark(#151517,#f2f2f4);--sub:light-dark(#5d5d64,#a5a5ad);--line:light-dark(#e7e5e1,#2b2b30);--field:light-dark(#f3f2ef,#1e1e22);--raise:light-dark(#ffffff,#2c2c32);--acc:#e6007e;--accSoft:light-dark(#fde6f2,#3a1229);--st1:light-dark(#f6f4f0,#2b2a31);--st2:light-dark(#d6d2ca,#0e0e11)}
+:root{color-scheme:light dark;--bg:light-dark(#fafafa,#151314);--ink:light-dark(#0a0a0b,#fafafa);--sub:light-dark(#717171,#b5b3b3);--line:light-dark(#e3e3e3,#433e3f);--field:light-dark(#ebebeb,#2b2829);--raise:light-dark(#fafafa,#433e3f);--acc:light-dark(#177bde,#539fed);--accSoft:light-dark(#ddecfb,#093159);--ok:#37ad00;--warn:light-dark(#db6100,#ffa868);--st1:light-dark(#fafafa,#2b2829);--st2:light-dark(#cccbcb,#0a0a0b)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "M PLUS 2",system-ui,sans-serif;overflow-x:clip}
@@ -79,7 +80,11 @@ summary .chev{color:var(--sub);transition:transform .2s}details[open] .chev{tran
 .sw{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line)}
 .row{display:grid;grid-template-columns:22px 6.6em minmax(0,1fr) 3.8em;align-items:center;gap:8px;min-height:44px}
 .row>.ms{font-size:20px;color:var(--sub)}.row label{font-size:14px}
-.row output{font-size:14px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.num{display:flex;align-items:center;gap:2px;height:36px;padding:0 8px;border:1.5px solid var(--line);border-radius:9px;background:var(--bg)}
+.num:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px var(--accSoft)}
+.num input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;font-size:16px;text-align:right;font-variant-numeric:tabular-nums;-moz-appearance:textfield;appearance:textfield;padding:0}
+.num input::-webkit-outer-spin-button,.num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.num small{font-size:13px;color:var(--sub)}
 input[type=range]{width:100%;accent-color:var(--acc);height:28px}
 .check{display:flex;gap:10px;align-items:center;min-height:44px;font-size:14px;cursor:pointer}
 .switch{position:relative;flex:none;width:44px;height:26px;border-radius:99px;background:var(--line);transition:background .2s}
@@ -90,7 +95,7 @@ input[type=range]{width:100%;accent-color:var(--acc);height:28px}
 .exp{display:grid;gap:8px;padding-top:4px}
 .exp .btn{justify-content:flex-start;padding:0 14px}.exp .btn small{margin-left:auto;font-size:12px;font-weight:500;opacity:.8}
 #msg{display:flex;gap:8px;align-items:flex-start;min-height:1.5em;font-size:14px;margin:14px 0 0;color:var(--sub)}#msg:empty{display:none}
-#msg.warn{color:var(--acc);font-weight:700}
+#msg .ms{color:var(--ok)}#msg.warn,#msg.warn .ms{color:var(--warn);font-weight:700}
 .probe1{background:var(--st1)}.probe2{background:var(--st2)}.probe1,.probe2{position:absolute;width:0;height:0}
 
 .sep{width:1px;align-self:stretch;margin:8px 3px;background:var(--line)}
@@ -98,7 +103,7 @@ input[type=range]{width:100%;accent-color:var(--acc);height:28px}
 .upl{grid-template-columns:minmax(0,1fr) 96px!important}
 .bigbtn{display:grid;place-items:center;height:100%;min-height:96px;border-radius:13px;background:var(--acc);color:#fff;cursor:pointer}
 .bigbtn .ms{font-size:36px}.bigbtn:hover{filter:brightness(1.08)}
-.row{grid-template-columns:24px minmax(0,1fr) 3.6em!important}
+.row{grid-template-columns:24px minmax(0,1fr) 6.2em!important}
 .check{justify-content:space-between}.check>.ms{font-size:20px;color:var(--sub)}
 .seg+.seg,.seg+.row,.row+.seg{margin-top:10px}
 .seg label{min-height:46px;font-size:16px;font-weight:700}
@@ -143,7 +148,7 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
     <div class="brand"><span class="ms">view_in_ar</span><h1>アクスタジェネレーター</h1></div>
 
     <div class="upl">
-      <div class="thumb" data-tip="切り抜き結果（マゼンタ＝カットライン）"><canvas id="prev" width="264" height="264"></canvas></div>
+      <div class="thumb" data-tip="切り抜き結果（赤線＝カットライン）"><canvas id="prev" width="264" height="264"></canvas></div>
       <label class="bigbtn" for="file" data-tip="画像を選ぶ（ドロップもOK・透明PNG推奨）"><span class="ms">add_photo_alternate</span></label>
       <input type="file" id="file" accept="image/*" hidden>
     </div>
@@ -238,8 +243,14 @@ import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 
 const $=id=>document.getElementById(id);
 const msg=(t,warn)=>{const m=$('msg');m.textContent='';if(!t){m.className='';return}const i=document.createElement('span');i.className='ms';i.textContent=warn?'warning':'check_circle';m.append(i,document.createTextNode(t));m.className=warn?'warn':''};
-const fmt={tol:v=>v,smooth:v=>v,gloss:v=>v+'%',tint:v=>v+'%',rainbow:v=>v+'%'};
-const syncOut=()=>{for(const o of document.querySelectorAll('output[data-for]')){const i=$(o.dataset.for);o.textContent=fmt[i.id]?fmt[i.id](i.value):i.value+(i.dataset.unit||'')}};
+const UNIT={gloss:'%',tint:'%',rainbow:'%'};
+for(const o of [...document.querySelectorAll('output[data-for]')]){const r=$(o.dataset.for),w=document.createElement('span');w.className='num';
+  const n=document.createElement('input');n.type='number';n.inputMode='decimal';n.min=r.min;n.max=r.max;n.step=r.step||1;n.id='n_'+r.id;n.setAttribute('aria-label',(r.getAttribute('aria-label')||'')+'（数値）');
+  const u=document.createElement('small');u.textContent=UNIT[r.id]||r.dataset.unit||'';w.append(n,u);o.replaceWith(w);
+  const commitNum=()=>{let v=parseFloat(n.value);if(isNaN(v)){n.value=r.value;return}v=Math.min(+r.max,Math.max(+r.min,v));const st=+(r.step||1);v=Math.round(v/st)*st;
+    v=+v.toFixed(3);n.value=v;if(String(v)!==r.value){r.value=v;r.dispatchEvent(new Event('input',{bubbles:true}));r.dispatchEvent(new Event('change',{bubbles:true}))}};
+  n.addEventListener('change',commitNum);n.addEventListener('keydown',e=>{if(e.key==='Enter'){commitNum();n.blur()}})}
+const syncOut=()=>{for(const n of document.querySelectorAll('.num input')){if(document.activeElement!==n)n.value=$(n.id.slice(2)).value}};
 const rv=n=>document.querySelector(`input[name="${n}"]:checked`).value;
 const P=()=>({h:+$('h').value,t:+rv('t'),margin:+$('margin').value,smooth:+$('smooth').value,white:rv('white'),gloss:+$('gloss').value/100,tint:+$('tint').value/100,rainbow:+$('rainbow').value/100,base:rv('base'),baseMat:rv('baseMat'),baseSize:+$('baseSize').value/100,baseT:+$('baseT').value,tabW:+$('tabW').value,tabX:+$('tabX').value,bg:$('bg').checked,tol:+$('tol').value});
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.round(w));c.height=Math.max(1,Math.round(h));return c};
@@ -426,9 +437,9 @@ function drawPreview(o){const c=$('prev'),x=c.getContext('2d'),S=c.width;x.clear
   const b=new THREE.Box2().setFromPoints(o.pts),w=b.max.x-b.min.x,h=b.max.y-b.min.y,k=(S-24)/Math.max(w,h),ox=(S-w*k)/2,oy=(S-h*k)/2;
   const X=v=>ox+(v-b.min.x)*k,Y=v=>oy+(b.max.y-v)*k;
   x.beginPath();o.pts.forEach((v,i)=>i?x.lineTo(X(v.x),Y(v.y)):x.moveTo(X(v.x),Y(v.y)));x.closePath();
-  x.fillStyle='rgba(205,236,226,.55)';x.fill();
+  x.fillStyle='rgba(221,236,251,.7)';x.fill();
   x.drawImage(st.art,X(-o.artW/2),Y(o.artCY+o.artH/2),o.artW*k,o.artH*k);
-  x.lineWidth=2;x.strokeStyle='#e6007e';x.stroke()}
+  x.lineWidth=2;x.strokeStyle='#ff4747';x.stroke()}
 function summaries(p,pw,ph){$('sumCut').textContent=`余白 ${p.margin}mm`;$('sumSize').textContent=`${pw.toFixed(0)}×${ph.toFixed(0)}mm・${p.t}mm`;
   $('sumWhite').textContent={match:'絵柄どおり',choke:'少し内側',full:'板全体',none:'なし'}[p.white];
   $('sumLook').textContent=p.gloss>0.3?'すりガラス':'ツヤ';$('sumBase').textContent=p.base==='none'?'なし':{ellipse:'だ円',round:'角丸',circle:'まる'}[p.base]+'・'+{clear:'クリア',white:'ホワイト',black:'ブラック'}[p.baseMat]}
