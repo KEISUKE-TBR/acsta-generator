@@ -123,6 +123,7 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
 .bstack{display:grid;grid-template-rows:minmax(0,1fr) 44px;gap:6px;height:100%}.bstack .bigbtn{min-height:0}
 .bstack .ib{width:100%;background:var(--bg);border:1.5px solid var(--line)}
 .sec{border-top:1px solid var(--line);margin-top:14px;padding-top:6px}
+.seg.tg{margin-bottom:12px}.seg.tg label{font-size:13px}.seg.tg small{font-size:13px;font-weight:500}
 .exp2{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .xb{display:grid;place-items:center;align-content:center;gap:6px;aspect-ratio:1;border-radius:14px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
 .xb .ms{font-size:34px}.xb b{font-size:14px}.xb:hover{background:var(--field)}
@@ -260,8 +261,16 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
     </div>
 
     <div class="tabp" id="tab-exp" role="tabpanel" aria-labelledby="t-exp" hidden>
+      <div class="lbl"><span class="ms">view_in_ar</span>GLBの書き出し先</div>
+      <div class="seg tg" role="radiogroup" aria-label="GLBの書き出し先">
+        <label data-tip="Web・Blender・Sketchfab（リアルな透過・屈折）"><input type="radio" name="glbTarget" value="web" checked><span class="ms">public</span><small>Web</small></label>
+        <label data-tip="Unity URP（UnityGLTFで読み込み）"><input type="radio" name="glbTarget" value="urp"><span class="ms">sports_esports</span><small>URP</small></label>
+        <label data-tip="Unity HDRP（glTFastで読み込み）"><input type="radio" name="glbTarget" value="hdrp"><span class="ms">sports_esports</span><small>HDRP</small></label>
+        <label data-tip="Unity Built-In・透過非対応のアプリ（半透明で表現）"><input type="radio" name="glbTarget" value="birp"><span class="ms">devices</span><small>その他</small></label>
+        <label data-tip="全部まとめてzipに"><input type="radio" name="glbTarget" value="all"><span class="ms">select_all</span><small>全部</small></label>
+      </div>
       <div class="exp2">
-        <button class="xb acc" id="expGlb" data-tip="3Dデータ（GLB）を保存・リアル版と互換版の2種入り"><span class="ms">view_in_ar</span><b>GLB</b></button>
+        <button class="xb acc" id="expGlb" data-tip="3Dデータ（GLB）を保存（上で選んだ書き出し先向け・zip）"><span class="ms">view_in_ar</span><b>GLB</b></button>
         <button class="xb" id="expKit" data-tip="入稿用データ一式（印刷・白版・カットパス）"><span class="ms">inventory_2</span><b>入稿</b></button>
         <button class="xb" id="expPng" data-tip="いまの見た目をPNGで保存"><span class="ms">photo_camera</span><b>PNG</b></button>
       </div>
@@ -633,7 +642,17 @@ function cutSVG(){const {o,p}=st.model,pts=o.pts,b=new THREE.Box2().setFromPoint
 <g id="art_area" fill="none" stroke="#00a0e9" stroke-width="0.1" stroke-dasharray="1 1"><rect x="${f(artL)}" y="${f(artT)}" width="${f(o.artW)}" height="${f(o.artH)}"/></g>
 <g id="cut_line" fill="none" stroke="#e6007e" stroke-width="0.1"><path d="${P1}"/>${bs?`<path d="${path(bs)}"/><path d="${path(bh)}"/>`:''}</g>
 </svg>`,plate:P1,W,H}}
-$('expGlb').onclick=async()=>{if(!st.model)return;msg('3Dデータを作っています…');try{const g=await glbBytes(false),g2=await glbBytes(true),enc=new TextEncoder();await save(base()+'_glb.zip',zip([{name:'acrylic_stand.glb',data:g},{name:'acrylic_stand_simple.glb',data:g2},{name:'README.txt',data:enc.encode('acrylic_stand.glb … リアル版。アクリルの透過・屈折・厚み（KHR_materials_transmission / volume / ior）入り。Blender、three.js、model-viewer、Sketchfab などで透明に見えます。\nacrylic_stand_simple.glb … 互換版。透過に対応していないビューア向けに、アクリルを半透明（アルファ）で表現しています。\n単位はメートル（実寸）。')}]))}catch(e){msg('GLBの書き出しに失敗しました。',true)}};
+const TARGETS={
+  web:{dir:'web_blender',mode:'real',name:'Web・Blender・Sketchfab',read:'リアル版。透過・屈折・厚み・虹色入り。\nBlender（ファイル→インポート→glTF）、Sketchfab、three.js、model-viewer などでそのまま透明に見えます。'},
+  urp:{dir:'unity_urp',mode:'real',name:'Unity URP',read:'Unity URP向け（UnityGLTFで読み込む前提）。\n1. Window → Package Manager → ＋ → Add package from git URL… に https://github.com/KhronosGroup/UnityGLTF.git を入力\n2. GLBを Assets にドラッグ\n3. 使っている URP Asset の「Opaque Texture」をオン（屈折を出すため）\n※glTFastで読む場合は、透過がうまく出なければ unity_builtin のGLBを使ってください。'},
+  hdrp:{dir:'unity_hdrp',mode:'nodisp',name:'Unity HDRP',read:'Unity HDRP向け（glTFastで読み込む前提）。\n1. Window → Package Manager → ＋ → Add package by name… に com.unity.cloud.gltfast を入力\n2. GLBを Assets にドラッグ\n※虹色（dispersion）はglTFastが非対応のため外しています。透明なアクリルとして読み込まれます。'},
+  birp:{dir:'unity_builtin_other',mode:'simple',name:'Unity Built-In・その他',read:'互換版。アクリルを半透明（アルファ）で表現しています。\nUnity Built-In（glTFast / UnityGLTF どちらでも）や、透過に対応していないビューアで確実に透けて見えます。'}};
+async function glbVariant(mode){if(mode!=='nodisp')return glbBytes(mode==='simple');const k=[acrylic.dispersion,baseClear.dispersion];acrylic.dispersion=baseClear.dispersion=0;try{return await glbBytes(false)}finally{acrylic.dispersion=k[0];baseClear.dispersion=k[1]}}
+$('expGlb').onclick=async()=>{if(!st.model)return;const tg=rv('glbTarget'),enc=new TextEncoder(),files=[];msg('3Dデータを作っています…');
+  try{const keys=tg==='all'?Object.keys(TARGETS):[tg];let readme='アクリルスタンド 3Dデータ（GLB）\n単位はメートル（実寸）。Unityの1単位＝1mとそのまま合います。\n絵柄と白版は透明部分を切り抜く設定（alphaMode MASK）で入っています。\n';
+    for(const k of keys){const t=TARGETS[k],g=await glbVariant(t.mode);files.push({name:(keys.length>1?t.dir+'/':'')+'acrylic_stand_'+t.dir+'.glb',data:g});readme+=`\n■ ${t.name}（${keys.length>1?t.dir+'/':''}acrylic_stand_${t.dir}.glb）\n${t.read}\n`}
+    files.push({name:'README.txt',data:enc.encode(readme)});await save(base()+'_glb_'+(tg==='all'?'all':TARGETS[tg].dir)+'.zip',zip(files))}
+  catch(e){msg('GLBの書き出しに失敗しました。',true)}};
 $('expPng').onclick=async()=>{renderer.render(scene,camera);await save(base()+'_preview.png',await canvasBlob(renderer.domElement))};
 $('expKit').onclick=async()=>{if(!st.model)return;msg('入稿用データをまとめています…');const p=st.model.p,enc=new TextEncoder(),files=[];
   const toU8=async b=>new Uint8Array(await b.arrayBuffer());
