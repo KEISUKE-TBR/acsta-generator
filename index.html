@@ -148,7 +148,7 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
     <div class="brand"><span class="ms">view_in_ar</span><h1>アクスタジェネレーター</h1></div>
 
     <div class="upl">
-      <div class="thumb" data-tip="切り抜き結果（赤線＝カットライン）"><canvas id="prev" width="264" height="264"></canvas></div>
+      <div class="thumb" data-tip="切り抜き結果（赤線＝カットライン）"><canvas id="prev" width="400" height="400"></canvas></div>
       <label class="bigbtn" for="file" data-tip="画像を選ぶ（ドロップもOK・透明PNG推奨）"><span class="ms">add_photo_alternate</span></label>
       <input type="file" id="file" accept="image/*" hidden>
     </div>
@@ -166,7 +166,7 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
         <label class="check" data-tip="背景を自動で消す（透明がない画像用）"><span class="ms">auto_fix_high</span><input type="checkbox" id="bg" data-k checked aria-label="背景を自動で消す"><span class="switch"></span></label>
         <div class="row" data-tip="背景を消す強さ"><span class="ms">ink_eraser</span><input type="range" id="tol" data-k min="5" max="120" value="40" aria-label="背景を消す強さ"><output data-for="tol"></output></div>
         <div class="row" data-tip="カット余白（絵からカットラインまで）"><span class="ms">border_outer</span><input type="range" id="margin" data-k min="0.5" max="8" step="0.5" value="2.5" data-unit="mm" aria-label="カット余白"><output data-for="margin"></output></div>
-        <div class="row" data-tip="輪郭のなめらかさ"><span class="ms">gesture</span><input type="range" id="smooth" data-k min="0" max="8" value="4" aria-label="輪郭のなめらかさ"><output data-for="smooth"></output></div>
+        <div class="row" data-tip="輪郭のなめらかさ（上げるほど丸く、くぼみを埋める）"><span class="ms">gesture</span><input type="range" id="smooth" data-k min="0" max="20" value="4" aria-label="輪郭のなめらかさ"><output data-for="smooth"></output></div>
       </div>
     </details>
 
@@ -200,7 +200,7 @@ summary{gap:12px}summary .val{margin-left:0;flex:1;font-size:14px;color:var(--in
       <div class="body">
         <div class="row" data-tip="すりガラス感（0でピカピカ）"><span class="ms">blur_on</span><input type="range" id="gloss" data-k min="0" max="100" value="4" aria-label="すりガラス感"><output data-for="gloss"></output></div>
         <div class="row" data-tip="ふちの色味（断面のうっすら緑）"><span class="ms">water_drop</span><input type="range" id="tint" data-k min="0" max="100" value="45" aria-label="ふちの色味"><output data-for="tint"></output></div>
-        <div class="row" data-tip="光の虹色"><span class="ms">looks</span><input type="range" id="rainbow" data-k min="0" max="100" value="30" aria-label="光の虹色"><output data-for="rainbow"></output></div>
+        <div class="row" data-tip="光の虹色"><span class="ms">looks</span><input type="range" id="rainbow" data-k min="0" max="100" value="15" aria-label="光の虹色"><output data-for="rainbow"></output></div>
       </div>
     </details>
 
@@ -292,15 +292,19 @@ const baseClear=acrylic.clone();baseClear.name='acrylic_base';
 const baseWhite=new THREE.MeshPhysicalMaterial({color:0xf4f4f2,roughness:0.25,clearcoat:0.8,clearcoatRoughness:0.05,name:'base_white'});
 const baseBlack=new THREE.MeshPhysicalMaterial({color:0x0c0c0e,roughness:0.2,clearcoat:1,clearcoatRoughness:0.03,name:'base_black'});
 function applyLook(){const p=P();
-  for(const m of [acrylic,baseClear]){m.roughness=0.02+p.gloss*0.5;m.clearcoatRoughness=0.02+p.gloss*0.4;
+  for(const m of [acrylic,baseClear]){m.roughness=p.gloss*0.5;m.clearcoatRoughness=0.02+p.gloss*0.4;
     m.attenuationColor.set(0xffffff).lerp(new THREE.Color(0x9fe0c8),p.tint);m.dispersion=p.rainbow*6;m.needsUpdate=true}
   acrylic.thickness=p.t;baseClear.thickness=p.baseT}
 
 /* ---------- image processing ---------- */
 const st={art:null,artIsSample:true,model:null,src:null};
+/* 縮小は半分ずつ段階的に（一気に縮めるとギザギザになるため） */
+function stepDown(img,w,h){let src=img,sw=img.naturalWidth||img.width,sh=img.naturalHeight||img.height;
+  while(sw/2>=w&&sh/2>=h){const t=mk(sw/2,sh/2),q=t.getContext('2d');q.imageSmoothingQuality='high';q.drawImage(src,0,0,t.width,t.height);src=t;sw=t.width;sh=t.height}
+  const o=mk(w,h),q=o.getContext('2d');q.imageSmoothingQuality='high';q.drawImage(src,0,0,w,h);return o}
 function prepareArt(img,p){
-  let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;const s=Math.min(1,2048/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);
-  const c=mk(w,h),x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,w,h);
+  let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;const LIM=Math.min(4096,renderer.capabilities.maxTextureSize||4096),s=Math.min(1,LIM/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);
+  const c=mk(w,h),x=c.getContext('2d',{willReadFrequently:true});x.drawImage(stepDown(img,w,h),0,0,w,h);
   const id=x.getImageData(0,0,w,h),d=id.data;let tr=0;for(let i=3;i<d.length;i+=4)if(d[i]<250)tr++;
   const hasAlpha=tr>w*h*0.01;
   if(!hasAlpha&&p.bg){const cs=[0,w-1,(h-1)*w,h*w-1];let r=0,g=0,b=0;for(const i of cs){r+=d[i*4];g+=d[i*4+1];b+=d[i*4+2]}r/=4;g/=4;b/=4;
@@ -339,12 +343,13 @@ function rdp(p,eps){if(p.length<4)return p;const keep=new Uint8Array(p.length);k
 
 function buildOutline(p){
   const art=st.art,aw=art.width,ah=art.height,gs=Math.min(1,640/Math.max(aw,ah)),gw=aw*gs,gh=ah*gs,ppm=gh/p.h;
-  const hasBase=p.base!=='none',tabPx=hasBase?Math.round(p.baseT*ppm):0,mPx=p.margin*ppm;
-  const pad=Math.ceil(mPx)+3,W=Math.ceil(gw)+2*pad,H=Math.ceil(gh)+2*pad+tabPx+2;
+  const hasBase=p.base!=='none',tabPx=hasBase?Math.round(p.baseT*ppm):0,mPx=p.margin*ppm,rPx=Math.max(0,p.smooth-4)*1.2*ppm;
+  const pad=Math.ceil(mPx+rPx)+3,W=Math.ceil(gw)+2*pad,H=Math.ceil(gh)+2*pad+tabPx+2;
   const sc=mk(Math.ceil(gw),Math.ceil(gh)),sx=sc.getContext('2d',{willReadFrequently:true});sx.drawImage(art,0,0,gw,gh);
   const ad=sx.getImageData(0,0,sc.width,sc.height).data;let m=new Uint8Array(W*H);
   for(let y=0;y<sc.height;y++)for(let x=0;x<sc.width;x++)if(ad[(y*sc.width+x)*4+3]>40)m[(y+pad)*W+x+pad]=1;
   if(mPx>0.5){const d=chamfer(m,W,H);for(let i=0;i<W*H;i++)m[i]=d[i]<=mPx?1:0}
+  if(rPx>0.5){const d=chamfer(m,W,H);for(let i=0;i<W*H;i++)m[i]=d[i]<=rPx?1:0;const inv=new Uint8Array(W*H);for(let i=0;i<W*H;i++)inv[i]=1-m[i];const e=chamfer(inv,W,H);for(let i=0;i<W*H;i++)m[i]=e[i]>rPx?1:0}
   // keep largest piece
   const lab=new Int32Array(W*H),q=new Int32Array(W*H);let best=0,bestN=0,lbl=0,pieces=0;
   for(let i=0;i<W*H;i++){if(!m[i]||lab[i])continue;lbl++;let h0=0,t0=0;q[t0++]=i;lab[i]=lbl;
@@ -361,7 +366,7 @@ function buildOutline(p){
   const out=new Uint8Array(W*H);let h1=0,t1=0;q[t1++]=0;out[0]=1;
   while(h1<t1){const j=q[h1++],x=j%W,y=(j/W)|0;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=W||ny>=H)continue;const k=ny*W+nx;if(!m[k]&&!out[k]){out[k]=1;q[t1++]=k}}}
   for(let i=0;i<W*H;i++)if(!out[i])m[i]=1;
-  let pts=rdp(smoothPts(trace(m,W,H),p.smooth),0.35);
+  let pts=rdp(smoothPts(trace(m,W,H),Math.min(p.smooth,4)+(p.smooth>4?2:0)),0.35);
   pts=pts.map(([x,y])=>new THREE.Vector2((x-cx0)/ppm,(origin-y)/ppm));
   return {pts,artW:gw/ppm,artH:p.h,artCY:(origin-(pad+gh/2))/ppm,pieces}}
 
@@ -385,12 +390,12 @@ function build(){
   // printed art (reverse-printed on the back face)
   if(!texCache){texCache=new THREE.CanvasTexture(st.art);texCache.colorSpace=THREE.SRGBColorSpace;texCache.anisotropy=renderer.capabilities.getMaxAnisotropy()}
   const pg=new THREE.PlaneGeometry(o.artW,o.artH);
-  const ink=new THREE.MeshStandardMaterial({map:texCache,alphaTest:0.5,roughness:0.55,side:p.white==='none'?THREE.DoubleSide:THREE.FrontSide,name:'print_ink'});
+  const ink=new THREE.MeshStandardMaterial({map:texCache,alphaTest:0.5,alphaToCoverage:true,roughness:0.55,side:p.white==='none'?THREE.DoubleSide:THREE.FrontSide,name:'print_ink'});
   const pm=new THREE.Mesh(pg,ink);pm.name='print';pm.position.set(0,o.artCY,-p.t/2-0.03);pm.castShadow=true;stand.add(pm);st.pm=pm;st.wm=null;st.baseMesh=null;
   if(p.white!=='none'){let wm;
     if(p.white==='full'){wm=new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(o.pts.map(v=>v.clone().multiplyScalar(1)))),null);wm.position.z=-p.t/2-0.08}
     else{const t=new THREE.CanvasTexture(whiteCanvas(p));t.colorSpace=THREE.SRGBColorSpace;wm=new THREE.Mesh(pg.clone(),null);wm.userData.tex=t;wm.position.set(0,o.artCY,-p.t/2-0.08)}
-    wm.material=new THREE.MeshStandardMaterial({color:0xffffff,map:wm.userData.tex||null,alphaTest:0.5,roughness:0.75,side:THREE.DoubleSide,name:'white_ink'});
+    wm.material=new THREE.MeshStandardMaterial({color:0xffffff,map:wm.userData.tex||null,alphaTest:0.5,alphaToCoverage:true,roughness:0.75,side:THREE.DoubleSide,name:'white_ink'});
     wm.name='white_plate';wm.castShadow=true;stand.add(wm);st.wm=wm}
   // base
   const box=new THREE.Box2().setFromPoints(o.pts),pw=box.max.x-box.min.x,ph=box.max.y-box.min.y;
@@ -432,14 +437,14 @@ $('vGrid').onclick=()=>{grid.visible=!grid.visible;press('vGrid',grid.visible);i
 controls.addEventListener('start',()=>{for(const id of ['vFront','vSide','vBack'])press(id,false)});
 
 /* ---------- 2D preview & summaries ---------- */
-function drawPreview(o){const c=$('prev'),x=c.getContext('2d'),S=c.width;x.clearRect(0,0,S,S);
-  for(let yy=0;yy<S;yy+=12)for(let xx=0;xx<S;xx+=12){x.fillStyle=((xx+yy)/12)%2?'#e9e9e9':'#f8f8f8';x.fillRect(xx,yy,12,12)}
+function drawPreview(o){const c=$('prev'),x=c.getContext('2d'),S=c.width;x.imageSmoothingQuality='high';x.clearRect(0,0,S,S);
+  for(let yy=0;yy<S;yy+=16)for(let xx=0;xx<S;xx+=16){x.fillStyle=((xx+yy)/16)%2?'#ebebeb':'#fafafa';x.fillRect(xx,yy,16,16)}
   const b=new THREE.Box2().setFromPoints(o.pts),w=b.max.x-b.min.x,h=b.max.y-b.min.y,k=(S-24)/Math.max(w,h),ox=(S-w*k)/2,oy=(S-h*k)/2;
   const X=v=>ox+(v-b.min.x)*k,Y=v=>oy+(b.max.y-v)*k;
   x.beginPath();o.pts.forEach((v,i)=>i?x.lineTo(X(v.x),Y(v.y)):x.moveTo(X(v.x),Y(v.y)));x.closePath();
   x.fillStyle='rgba(221,236,251,.7)';x.fill();
   x.drawImage(st.art,X(-o.artW/2),Y(o.artCY+o.artH/2),o.artW*k,o.artH*k);
-  x.lineWidth=2;x.strokeStyle='#ff4747';x.stroke()}
+  x.lineWidth=3;x.strokeStyle='#ff4747';x.stroke()}
 function summaries(p,pw,ph){$('sumCut').textContent=`余白 ${p.margin}mm`;$('sumSize').textContent=`${pw.toFixed(0)}×${ph.toFixed(0)}mm・${p.t}mm`;
   $('sumWhite').textContent={match:'絵柄どおり',choke:'少し内側',full:'板全体',none:'なし'}[p.white];
   $('sumLook').textContent=p.gloss>0.3?'すりガラス':'ツヤ';$('sumBase').textContent=p.base==='none'?'なし':{ellipse:'だ円',round:'角丸',circle:'まる'}[p.base]+'・'+{clear:'クリア',white:'ホワイト',black:'ブラック'}[p.baseMat]}
